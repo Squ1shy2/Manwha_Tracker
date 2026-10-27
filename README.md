@@ -1,10 +1,10 @@
-# Manhwa Tracker v6.3
+# Manhwa Tracker v6.4
 
-Changes:
-- Favorites and Recents show up to 6 titles by default.
-- Desktop layout is a clean 3 x 2 grid.
-- Show all only appears when there are more than 6.
-- Tablet uses 2 columns; phone stacks vertically.
-- Existing v6.2 data migrates automatically.
+Mobile UX changes:
+- The large search/control header is no longer sticky on phones.
+- It scrolls off-screen normally so the tracker gets the full display.
+- A floating ↑ button appears after scrolling to jump back to the controls.
+- Desktop behavior stays unchanged.
+- Existing v6.3 data migrates automatically.
 
 Upload all files to the root of the GitHub repository and commit to main.
