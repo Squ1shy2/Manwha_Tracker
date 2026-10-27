@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v6.1</title>
+<title>Manhwa Tracker v6.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -47,18 +47,18 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 .field input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:10px;border-radius:10px}
 .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .danger{border-color:#703b44;color:#ff9aa6}.danger:hover{border-color:#a84b59}.helper{font-size:12px;color:var(--muted);line-height:1.4}
-.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0 8px}
+.dashboard{display:flex;flex-direction:column;gap:14px;margin:18px 0 8px}
 .dashPanel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
 .dashTitle{font-size:14px;font-weight:700;margin:0 0 9px;color:#dfe5f2}
-.quickList{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.quickList{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .quickCard{min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px}
 .quickName{font-size:13px;font-weight:700;line-height:1.25}
-.quickMeta{font-size:11px;color:var(--muted);margin-top:5px}
+.quickMeta{font-size:11px;color:var(--muted);margin-top:5px}.showMoreBtn{margin-top:10px;width:100%;font-size:12px;padding:7px 10px}
 .starBtn{padding:6px 8px;min-width:38px;font-size:18px;line-height:1}
 .starBtn.on{color:#ffd166;border-color:#6e5a28}
 
 .hidden{display:none!important}
-@media(max-width:700px){.dashboard{grid-template-columns:1fr}.quickList{grid-template-columns:1fr}.quickCard{min-width:0}
+@media(max-width:700px){.quickList{grid-template-columns:1fr}.quickCard{min-width:0}
   .wrap{
     padding-top:13px;
     padding-bottom:13px;
@@ -86,7 +86,7 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v6.1</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v6.2</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -106,7 +106,18 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
   <div class="stats" id="stats"></div>
 </div></header>
 
-<div class="wrap"><div class="dashboard"><div class="dashPanel"><div class="dashTitle">★ Favorites</div><div class="quickList" id="favoritesBar"></div></div><div class="dashPanel"><div class="dashTitle">⏱ Recents</div><div class="quickList" id="recentsBar"></div></div></div></div><main class="wrap" id="app"></main>
+<div class="wrap"><div class="dashboard">
+<div class="dashPanel">
+  <div class="dashTitle">★ Favorites</div>
+  <div class="quickList" id="favoritesBar"></div>
+  <button class="showMoreBtn hidden" id="favoritesMoreBtn">Show all</button>
+</div>
+<div class="dashPanel">
+  <div class="dashTitle">⏱ Recents</div>
+  <div class="quickList" id="recentsBar"></div>
+  <button class="showMoreBtn hidden" id="recentsMoreBtn">Show all</button>
+</div>
+</div></div><main class="wrap" id="app"></main>
 <input id="importFile" type="file" accept=".json,application/json" class="hidden">
 
 <dialog id="editDialog">
@@ -161,8 +172,8 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 
 <script>
 const seed=[{"title": "A Flame Reborn", "chapter": 82, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "A Returner’s Magic Should Be Special", "chapter": 40, "letter": "A", "note": "Turned into Anime", "url": "", "status": "Completed • Anime"}, {"title": "A Rogue Guard in a Medieval Fantasy", "chapter": 11, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Academy Survival Guide", "chapter": 79, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Academy’s Genius Swordmaster", "chapter": 23, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Acadamy’s Genius Tamer", "chapter": 30, "letter": "A", "note": "", "url": "", "status": "Needs verification"}, {"title": "Admission Is a Waste of Time", "chapter": 35, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Advanced Player", "chapter": 101, "letter": "A", "note": "", "url": "", "status": "Completed"}, {"title": "After 10 Millenia in Hell", "chapter": 35, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "All Class Awakening Mage", "chapter": 160, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Artifact-Devouring", "chapter": 33, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Bad Born Blood", "chapter": 0, "letter": "B", "note": "", "url": "", "status": "Ongoing"}, {"title": "Clever Cleaning Life of the Returned Genius Hunter", "chapter": 63, "letter": "C", "note": "", "url": "", "status": "Ongoing"}, {"title": "Cleric of Decay", "chapter": 79, "letter": "C", "note": "", "url": "", "status": "Hiatus"}, {"title": "Cosmic Heavenly Demon", "chapter": 19, "letter": "C", "note": "", "url": "", "status": "Ongoing"}, {"title": "Disaster Class Hero", "chapter": 37, "letter": "D", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Doom Breaker", "chapter": 0, "letter": "D", "note": "", "url": "", "status": "Hiatus"}, {"title": "Dragon Devouring Mage", "chapter": 80, "letter": "D", "note": "", "url": "", "status": "Ongoing"}, {"title": "Dragon Slayers Peerless Regression", "chapter": 101, "letter": "D", "note": "", "url": "", "status": "Ongoing"}, {"title": "Dungeon Odyssey", "chapter": 145, "letter": "D", "note": "", "url": "", "status": "Ongoing"}, {"title": "Dungeon Reset", "chapter": 84, "letter": "D", "note": "", "url": "", "status": "Completed"}, {"title": "Dungeons and Artifacts", "chapter": 43, "letter": "D", "note": "", "url": "", "status": "Completed"}, {"title": "Enrolling in the Transcendent Academy", "chapter": 141, "letter": "E", "note": "", "url": "", "status": "Ongoing"}, {"title": "Eternally Regressing Knight", "chapter": 72, "letter": "E", "note": "", "url": "", "status": "Ongoing"}, {"title": "FFF-Class Trash Hero", "chapter": 7, "letter": "F", "note": "", "url": "", "status": "Ongoing"}, {"title": "Genius Blinker", "chapter": 60, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Genius Tamer", "chapter": 30, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "God Level Assassin", "chapter": 139, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Got a Gallery in the Wild", "chapter": 10, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Green Skin", "chapter": 22, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Hell Login", "chapter": 5, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "Helmut: The Forsaken Child", "chapter": 94, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "Hero Killer", "chapter": 72, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "How to Use a Returner", "chapter": 77, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Am Destined for Greatness", "chapter": 140, "letter": "I", "note": "", "url": "", "status": "Completed"}, {"title": "I Became the Trashy First Prince", "chapter": 52, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Killed an Academy Player", "chapter": 64, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Married the Dragon That I Killed", "chapter": 9, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Obtained a Mythic Item", "chapter": 159, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Raided the Demon God’s Treasure Trove", "chapter": 0, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "Infinite Mage", "chapter": 186, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "Insanely Talented Player", "chapter": 13, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "Is This Hero for Real", "chapter": 101, "letter": "I", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Jack Be Invincible", "chapter": 121, "letter": "J", "note": "", "url": "", "status": "Hiatus"}, {"title": "Jungle Juice", "chapter": 193, "letter": "J", "note": "", "url": "", "status": "Ongoing / Side Stories"}, {"title": "Kill the Dragon", "chapter": 133, "letter": "K", "note": "", "url": "", "status": "Ongoing"}, {"title": "Kill the Hero", "chapter": 105, "letter": "K", "note": "", "url": "", "status": "Completed"}, {"title": "Latna Saga", "chapter": 298, "letter": "L", "note": "", "url": "", "status": "Hiatus"}, {"title": "Level 1 Player", "chapter": 56, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Level 999 Goblin", "chapter": 22, "letter": "L", "note": "", "url": "", "status": "Completed"}, {"title": "Leveling Beyond the MAX", "chapter": 53, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Leveling With the Gods", "chapter": 57, "letter": "L", "note": "", "url": "", "status": "Ongoing / Irregular"}, {"title": "Lord of the Goblins", "chapter": 10, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Lout of the Counts Family", "chapter": 128, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Margraves Bastard Son Was the Emperor", "chapter": 62, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Martial God Who Regressed to Level 2", "chapter": 87, "letter": "M", "note": "", "url": "", "status": "Hiatus"}, {"title": "Max Level Hero Has Returned", "chapter": 89, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Max Level Newbie", "chapter": 231, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Max Talent Player", "chapter": 55, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Maxed Out Player", "chapter": 0, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "My Exclusive Tower Guide", "chapter": 99, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "National Job Change", "chapter": 135, "letter": "N", "note": "", "url": "", "status": "Ongoing"}, {"title": "Necromancer Academy", "chapter": 180, "letter": "N", "note": "", "url": "", "status": "Hiatus (English)"}, {"title": "Overgeared", "chapter": 120, "letter": "O", "note": "", "url": "", "status": "Ongoing"}, {"title": "Past Life Regressor", "chapter": 46, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Patron of Villains", "chapter": 5, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Pick Me Up", "chapter": 187, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Player Who Can’t Level Up", "chapter": 204, "letter": "P", "note": "", "url": "", "status": "Hiatus"}, {"title": "Priest of Corruption", "chapter": 53, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Ranker’s Return", "chapter": 68, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Reincarnation of the Hero Party’s Grand Mage", "chapter": 89, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Reincarnator", "chapter": 113, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Return of the 8th Class Magician", "chapter": 62, "letter": "R", "note": "Finished — Not Read", "url": "", "status": "Completed"}, {"title": "Return of the Disaster Class Hero", "chapter": 48, "letter": "R", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Return of the Frozen Player", "chapter": 125, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Return of the Legendary Spear Knight", "chapter": 52, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Returned C Rank Tank", "chapter": 47, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Returning With Absolutely Nothing", "chapter": 86, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Revenge of the Iron-Blooded Sword Hound", "chapter": 130, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Rise from the Rubble", "chapter": 92, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Second Life Ranker", "chapter": 123, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Skeleton Soldier Failed to Protect the Dungeon", "chapter": 258, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Skill Master Levels Up", "chapter": 140, "letter": "S", "note": "", "url": "", "status": "Hiatus"}, {"title": "Slave B", "chapter": 80, "letter": "S", "note": "Completed", "url": "", "status": "Completed"}, {"title": "Solo Login", "chapter": 144, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Solo Max-Level Newbie", "chapter": 83, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "SSS-Class Revival Hunter", "chapter": 85, "letter": "S", "note": "", "url": "", "status": "Hiatus"}, {"title": "SSS-Class Suicide Hunter", "chapter": 86, "letter": "S", "note": "", "url": "", "status": "Check duplicate"}, {"title": "Standard of Reincarnation", "chapter": 168, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Stellar Swordmaster", "chapter": 49, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Survival Story of a Sword King in a Fantasy World", "chapter": 103, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Surviving as a Barbarian", "chapter": 69, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Surviving the Game as a Barbarian", "chapter": 164, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Talent Swallowing Magician", "chapter": 50, "letter": "T", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Terminally Ill Genius Dark Knight", "chapter": 128, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Academy’s Sashimi Sword Master", "chapter": 67, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Art of Reincarnation", "chapter": 168, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The Beginning After the End", "chapter": 175, "letter": "T", "note": "", "url": "", "status": "Ongoing • Anime"}, {"title": "The Constellation That Returned From Hell", "chapter": 102, "letter": "T", "note": "", "url": "", "status": "Completed"}, {"title": "The Constellations Are My Disciples", "chapter": 41, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Dark Mage’s Return to Enlistment", "chapter": 1, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Dark Magician Transmigrates After 66666 Years", "chapter": 98, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Demon Prince Goes to the Academy", "chapter": 80, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Descent of the Demonic Master", "chapter": 32, "letter": "T", "note": "", "url": "", "status": "Completed"}, {"title": "The Extra’s Academy Survival Guide", "chapter": 41, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Frozen Player", "chapter": 125, "letter": "T", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "The Game That I Came From", "chapter": 186, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Genius Assassin Who Takes It All", "chapter": 8, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The Great Mage of the Hero’s Party", "chapter": 89, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Greatest Estate Developer", "chapter": 176, "letter": "T", "note": "Finished — Read", "url": "", "status": "Completed"}, {"title": "The Heavenly Demon Can’t Live a Normal Life", "chapter": 70, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Hero Returns", "chapter": 107, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Indomitable Martial King", "chapter": 11, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Knight King Who Returned With a God", "chapter": 122, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Last Adventurer", "chapter": 72, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Legendary Hero Is an Honors Class Student", "chapter": 51, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Legendary Moonlight Sculptor", "chapter": 169, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The Live", "chapter": 142, "letter": "T", "note": "Finished — Not Read", "url": "", "status": "Completed"}, {"title": "The Newbie Civil Servant Hunts Villains Before Going Home", "chapter": 0, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Only Necromancer", "chapter": 82, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Overpowered Newbie", "chapter": 131, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Perks of Being an S-Class Heroine", "chapter": 56, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Player Hides His Past", "chapter": 106, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Player Who Can’t Level Up", "chapter": 6, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Regressed Mercenary’s Machinations", "chapter": 61, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Regressed Son of a Duke Is an Assassin", "chapter": 77, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Stellar Sword", "chapter": 49, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Strongest Evolutionary Necromancer", "chapter": 105, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Tutorial Is Too Hard", "chapter": 58, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Warrior Returns", "chapter": 161, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The World After the Fall", "chapter": 186, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "There’s No Such Thing as a Bad Lady", "chapter": 43, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Time Limited Genius", "chapter": 128, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Transcendent Academy", "chapter": 141, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Tyrant of the Tower Defense Game", "chapter": 100, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Ultimate Scheming System", "chapter": 378, "letter": "U", "note": "", "url": "", "status": "Ongoing"}, {"title": "Ultimate Shut-In", "chapter": 72, "letter": "U", "note": "", "url": "", "status": "Ongoing"}, {"title": "Unordinary", "chapter": 248, "letter": "U", "note": "", "url": "", "status": "Ongoing"}, {"title": "Warriors Ballad", "chapter": 0, "letter": "W", "note": "", "url": "", "status": "Ongoing"}, {"title": "World’s Strongest Troll", "chapter": 29, "letter": "W", "note": "", "url": "", "status": "Ongoing"}, {"title": "Worn and Torn Newbie", "chapter": 149, "letter": "W", "note": "", "url": "", "status": "Ongoing"}, {"title": "Worthless Regression", "chapter": 86, "letter": "W", "note": "", "url": "", "status": "Ongoing"}];
-const KEY="manhwaTracker_v6_1";
-const OLDKEYS=["manhwaTracker_v6","manhwaTracker_v5","manhwaTracker_v4","manhwaTracker_v3","manhwaTracker_v2","manhwaTracker_v1"];
+const KEY="manhwaTracker_v6_2";
+const OLDKEYS=["manhwaTracker_v6_1","manhwaTracker_v6","manhwaTracker_v5","manhwaTracker_v4","manhwaTracker_v3","manhwaTracker_v2","manhwaTracker_v1"];
 const STATUS_OPTIONS=[
   "Ongoing",
   "Hiatus / Season Break",
@@ -213,6 +224,8 @@ let data=(saved||seed).map(x=>({
 }));
 let editingIndex=null;
 let apiCache={};
+let favoritesExpanded=false;
+let recentsExpanded=false;
 
 function touch(i){
   if(i!==null && i!==undefined && data[i]) data[i].lastUpdated=Date.now();
@@ -313,28 +326,29 @@ function makeStatusSelect(x){
 function renderQuickBars(){
   const favBox=document.getElementById("favoritesBar");
   const recBox=document.getElementById("recentsBar");
+  const favBtn=document.getElementById("favoritesMoreBtn");
+  const recBtn=document.getElementById("recentsMoreBtn");
   if(!favBox||!recBox) return;
 
   const favs=data.map((x,i)=>({...x,_i:i}))
     .filter(x=>x.favorite)
-    .sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0) || a.title.localeCompare(b.title))
-    .slice(0,5);
+    .sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0) || a.title.localeCompare(b.title));
 
   const recents=data.map((x,i)=>({...x,_i:i}))
     .filter(x=>x.lastUpdated)
-    .sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0))
-    .slice(0,5);
+    .sort((a,b)=>(b.lastUpdated||0)-(a.lastUpdated||0));
 
-  const fill=(box,items,emptyText)=>{
+  const fill=(box,items,emptyText,expanded)=>{
     box.innerHTML="";
-    if(!items.length){
+    const shown=expanded?items:items.slice(0,3);
+    if(!shown.length){
       const e=document.createElement("div");
       e.className="quickMeta";
       e.textContent=emptyText;
       box.appendChild(e);
       return;
     }
-    for(const x of items){
+    for(const x of shown){
       const q=document.createElement("div"); q.className="quickCard";
       const name=document.createElement("div"); name.className="quickName";
       const a=document.createElement("a");
@@ -348,8 +362,22 @@ function renderQuickBars(){
     }
   };
 
-  fill(favBox,favs,"Star a title to pin it here.");
-  fill(recBox,recents,"Change a chapter, status, note, or add a title to see it here.");
+  fill(favBox,favs,"Star a title to pin it here.",favoritesExpanded);
+  fill(recBox,recents,"Change a chapter, status, note, or add a title to see it here.",recentsExpanded);
+
+  if(favs.length>3){
+    favBtn.classList.remove("hidden");
+    favBtn.textContent=favoritesExpanded?`Show top 3`:`Show all (${favs.length})`;
+  }else{
+    favBtn.classList.add("hidden");
+  }
+
+  if(recents.length>3){
+    recBtn.classList.remove("hidden");
+    recBtn.textContent=recentsExpanded?`Show top 3`:`Show all (${recents.length})`;
+  }else{
+    recBtn.classList.add("hidden");
+  }
 }
 
 function render(){
@@ -471,6 +499,16 @@ document.getElementById("deleteTitleBtn").onclick=()=>{
     document.getElementById("editDialog").close();
     persist();
   }
+};
+
+
+document.getElementById("favoritesMoreBtn").onclick=()=>{
+  favoritesExpanded=!favoritesExpanded;
+  renderQuickBars();
+};
+document.getElementById("recentsMoreBtn").onclick=()=>{
+  recentsExpanded=!recentsExpanded;
+  renderQuickBars();
 };
 
 document.getElementById("search").addEventListener("input",render);
