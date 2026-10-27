@@ -1,4 +1,4 @@
-const CACHE_NAME = "manhwa-tracker-v6-2-pwa-1";
+const CACHE_NAME = "manhwa-tracker-v6-3-pwa-1";
 const APP_SHELL = [
   "./",
   "./index.html",
