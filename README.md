@@ -1,10 +1,8 @@
-# Manhwa Tracker v6
+# Manhwa Tracker v6.1
 
-New:
-- Favorites bar (top 5)
-- Recents bar (top 5)
-- Star/unstar titles
-- Recents update when chapter/status/note changes or a title is added
-- v5 data migrates automatically
+Changes:
+- Favorites and Recents now wrap into clean rows instead of horizontal scrolling.
+- Mobile stacks those cards vertically for easier reading.
+- v6 data migrates automatically.
 
-Upload all files in this folder to the root of the GitHub repository and commit to main.
+Upload all files to the root of the GitHub repository and commit to main.
