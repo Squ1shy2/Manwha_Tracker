@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.4</title>
+<title>Manhwa Tracker v7.5</title>
 <style>
 :root{
   color-scheme:dark;
@@ -130,7 +130,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
 </head>
 <body class="v7locked">
 <section id="v7Gate" aria-label="Account access">
- <h2>Manhwa Tracker v7.4 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
+ <h2>Manhwa Tracker v7.5 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
  <p>Full tracker interface with optional cloud account. Your original v6.4 site remains separate.</p>
  <div id="v7Welcome"><button id="v7Account" type="button">Use an account</button> <button id="v7Guest" type="button">Continue as guest</button></div>
  <form id="v7Auth" hidden><label>Email <input id="v7Email" type="email" required autocomplete="email"></label><label>Password <input id="v7Password" type="password" required minlength="6" autocomplete="current-password"></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div></form>
@@ -139,7 +139,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
  <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
 <dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.4</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.5</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -308,22 +308,22 @@ async function checkAniList(title){
  return {provider:"AniList",name:m.title?.english||m.title?.romaji||m.title?.native||"",names:[m.title?.english,m.title?.romaji,m.title?.native],status:mapAniStatus(m.status),rawStatus:m.status,url:m.siteUrl||("https://anilist.co/manga/"+m.id),id:m.id};
 }
 async function checkMangaUpdates(title){
- const r=await fetch("https://api.mangaupdates.com/v1/series/search",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({search:title,stype:"title",perpage:5})});
- if(!r.ok)throw Error("HTTP "+r.status);
- const j=await r.json();
- const entries=Array.isArray(j?.results)?j.results:Array.isArray(j?.series)?j.series:[];
- const first=entries.find(entry=>reliableMatch(title,[entry?.record?.title,entry?.title,...(entry?.record?.associated||[]).map(x=>x.title)]));
- if(!first)return null;
- const rec=first.record||first;
- const id=rec.series_id;
- // Fetch the series detail only after an exact title match, to avoid wrong-series status.
- if(!id)return {provider:"MangaUpdates",name:rec.title||title,names:[rec.title],status:null,url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
- const detail=await fetch("https://api.mangaupdates.com/v1/series/"+encodeURIComponent(id));
- if(!detail.ok)throw Error("detail HTTP "+detail.status);
- const d=await detail.json();
- const status=String(d.status||"").trim();
- const label=d.completed===true?"Completed":(/hiatus|on hold/i.test(status)?"Hiatus / Season Break":(/cancel|axed|discontinu/i.test(status)?"Cancelled":(/ongoing/i.test(status)?"Ongoing":status||"Unknown")));
- return {provider:"MangaUpdates",name:d.title||rec.title||title,names:[d.title,rec.title],status:label,rawStatus:status,url:d.url||"https://www.mangaupdates.com/series/"+id,id};
+ // MangaUpdates does not consistently permit direct browser requests.
+ // Proxy only this public metadata lookup through our authenticated Edge Function.
+ if(window.v7Mode!=="cloud"){
+  return {provider:"MangaUpdates",name:title,names:[],status:null,
+   note:"Sign in to verify via MangaUpdates; guest mode can use the source link.",
+   url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
+ }
+ const {data:result,error}=await client.functions.invoke("mangaupdates-lookup",{body:{title}});
+ if(error)throw Error(error.message||"Lookup temporarily unavailable");
+ if(result?.error)throw Error(result.error);
+ if(!result?.matched){
+  return {provider:"MangaUpdates",name:title,names:[],status:null,
+   note:result?.note||"No exact title match",url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
+ }
+ return {provider:"MangaUpdates",name:result.title||title,names:[result.title,title],
+  status:result.status||"Unknown",rawStatus:result.rawStatus||"",url:result.url||"https://www.mangaupdates.com",id:result.id};
 }
 async function checkOne(i){
  const x=data[i],el=document.getElementById("api-"+i);
@@ -343,7 +343,7 @@ async function checkOne(i){
  const nodes=[];
  for(const result of results){
   const line=document.createElement("div");
-  if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";
+  if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";\n  else if(result.note)line.textContent=result.provider+": "+result.note+" ";
   else line.textContent=result.provider+": "+(result.match?"Exact title match":"Possible match — verify title")+" • "+(result.status||"Status unavailable")+" • ";
   if(result.url){
    const link=document.createElement("a");link.href=result.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Source";line.append(link);
