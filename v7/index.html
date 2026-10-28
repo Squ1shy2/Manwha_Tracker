@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.7</title>
+<title>Manhwa Tracker v7.8</title>
 <style>
 :root{
   color-scheme:dark;
@@ -154,7 +154,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
 <body class="v7locked">
 <section id="v7Gate" aria-label="Welcome to Manhwa Tracker">
  <div class="v7Hero">
-  <div class="v7Eyebrow"><span class="v7Dot"></span> YOUR PERSONAL READING LIBRARY <span class="v7Dev">v7.6 PREVIEW</span></div>
+  <div class="v7Eyebrow"><span class="v7Dot"></span> YOUR PERSONAL READING LIBRARY <span class="v7Dev">v7.8</span></div>
   <h2>Keep the story going.<br><span>Remember where you left off.</span></h2>
   <p>Track chapters, organize favorites, and check publication statuses — without interrupting your reading.</p>
  </div>
@@ -198,7 +198,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
  <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
 <dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.7</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.8</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -673,7 +673,7 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").addEventListener("change",async e=>{
   const f=e.target.files[0]; if(!f) return;
-  if(window.v7Mode==="cloud"){alert("Cloud bulk import will be enabled after migration safeguards. No changes made.");e.target.value="";return;}
+  if(window.v7Mode==="cloud"){try{if(typeof window.v7CloudImport!=="function")throw Error("Importer is still loading. Try again.");await window.v7CloudImport(f)}catch(err){alert("Import could not finish: "+err.message+" Existing cloud titles were not overwritten.")}e.target.value="";return;}
   try{
     const imported=JSON.parse(await f.text());
     if(!Array.isArray(imported)) throw 0;
@@ -792,6 +792,48 @@ async function enterAccount(session){
  enter();
  if(pending)syncQueue=syncQueue.then(flush).catch(console.error);
 }
+// Cloud migration: add-only. Never replace existing title keys or pending offline edits.
+window.v7CloudImport=async function(file){
+ if(!user||window.v7Mode!=="cloud")throw Error("Sign into your cloud account first.");
+ if(!navigator.onLine||stopped||pending)throw Error("Resolve or sync any pending edits before importing.");
+ await syncQueue;
+ if(stopped||pending)throw Error("Unsynced changes detected. Resolve these first.");
+ if(file.size>5*1024*1024)throw Error("Backup file is larger than 5 MB.");
+ const raw=JSON.parse(await file.text());
+ const list=Array.isArray(raw)?raw:Array.isArray(raw?.titles)?raw.titles:null;
+ if(!list||list.length>10000)throw Error("Expected a tracker JSON array of 10,000 titles or fewer.");
+ const candidates=new Map();let invalid=0,duplicates=0;
+ for(const x of list){
+  if(!x||typeof x.title!=="string"||!x.title.trim()||x.title.length>250||!Number.isFinite(Number(x.chapter??0))||Number(x.chapter??0)<0){invalid++;continue}
+  const k=key(x.title);if(candidates.has(k)){duplicates++;continue}
+  if(/cancel|axed/i.test(String(x.status||""))){invalid++;continue}
+  candidates.set(k,{...x,title:x.title.trim(),chapter:Number(x.chapter??0),status:x.status||"Needs verification",note:String(x.note??x.notes??""),url:String(x.url??""),favorite:!!x.favorite,lastUpdated:x.lastUpdated||null});
+ }
+ const {data:existing,error:loadError}=await client.from("user_library").select("*").is("deleted_at",null);
+ if(loadError)throw loadError;
+ const existingKeys=new Set(existing.map(x=>key(x.title)));
+ const additions=[...candidates].filter(([k])=>!existingKeys.has(k)).map(([,x])=>x);
+ const skipped=candidates.size-additions.length;
+ if(!additions.length){alert("No new titles to import. "+skipped+" titles already exist in this cloud library.");return}
+ const approved=confirm("Safe cloud import preview:\\n\\n"+additions.length+" new titles\\n"+skipped+" already in cloud (will not be changed)\\n"+duplicates+" duplicate rows in file\\n"+invalid+" invalid/cancelled rows skipped\\n\\nOnly NEW titles will be uploaded. Existing chapter progress, favorites and notes will stay unchanged. Proceed?");
+ if(!approved)return;
+ // Keep a local recovery snapshot before any writes.
+ const backup={format:"manhwa-tracker-pre-import-v7.8",savedAt:new Date().toISOString(),titles:existing.map(toLocal)};
+ localStorage.setItem("manhwaTracker_pre_import_"+user.id+"_"+Date.now(),JSON.stringify(backup));
+ let added=0,failed=0;
+ for(const x of additions){
+  const {error}=await client.from("user_library").insert(toRemote(x));
+  if(!error){added++;continue}
+  if(error.code==="23505"){failed++;continue}
+  failed++;console.warn("Import skipped",x.title,error.message);
+ }
+ const {data:updated,error:refreshError}=await client.from("user_library").select("*").is("deleted_at",null).order("title");
+ if(refreshError)throw Error("Upload finished but refresh failed; reload the page. "+refreshError.message);
+ remote=new Map(updated.map(r=>[key(r.title),r]));data=updated.map(toLocal);
+ localStorage.setItem(cacheKey(),JSON.stringify(data));
+ notify("Synced • online required");render();
+ alert("Cloud import complete: "+added+" titles added, "+skipped+" already existed, "+failed+" failed/skipped. Existing records were not overwritten. Your pre-import snapshot is saved on this device.");
+};
 async function flush(){
  if(!user||window.v7Mode!=="cloud"||stopped||!pending)return;
  if(!navigator.onLine){notify("Offline • changes queued on device");return}
