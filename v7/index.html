@@ -703,7 +703,7 @@ function storePending(){
  localStorage.setItem(pendingKey(),JSON.stringify(pending));
  pendingGeneration++;
 }
-function toLocal(r){const src=r.source_data||{};return {...src,title:r.title,chapter:Number(r.chapter),status:r.publication_status_override||src.status||"Needs verification",favorite:!!r.favorite,note:r.personal_notes||"",url:r.reading_url||"",letter:deriveLetter(r.title),lastUpdated:src.lastUpdated||null,_cloudId:r.id}}
+function toLocal(r){const src=r.source_data||{};return {...src,title:r.title,chapter:Number(r.chapter),status:r.publication_status_override||src.status||"Needs verification",favorite:!!r.favorite,note:r.personal_notes||"",url:r.reading_url||"",letter:((r.title||"").trim().match(/[A-Za-z0-9]/)?.[0]?.toUpperCase()||"#"),lastUpdated:src.lastUpdated||null,_cloudId:r.id}}
 function toRemote(x){return {title:x.title,title_key:key(x.title),chapter:Number(x.chapter)||0,favorite:!!x.favorite,reading_url:x.url||null,personal_notes:x.note||null,publication_status_override:x.status||null,source_data:{...x,_cloudId:undefined}}}
 const equivalent=(x,r)=>{
  const a=toRemote(x),b=toRemote(toLocal(r));
