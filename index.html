@@ -721,6 +721,10 @@ if ("serviceWorker" in navigator) {
 
 <button id="topBtn" class="topBtn" aria-label="Back to top">↑</button>
 
+<script>
+/* Capture the recovery marker before Supabase Auth consumes the URL fragment. */
+window.v7RecoveryEntry = new URLSearchParams(location.hash.slice(1)).get("type")==="recovery" || new URLSearchParams(location.search).get("type")==="recovery";
+</script>
 <script type="module">
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 const client=createClient("https://lqsbnwujhqhtcbkbmbzx.supabase.co","sb_publishable_Q9gt-VVebZ5MfZz_fMprHQ_a2paH51e");
@@ -916,14 +920,14 @@ window.v7OnChange=()=>{
 $("v7Guest").onclick=enterGuest;
 $("v7Account").onclick=()=>{$("v7Welcome").hidden=true;$("v7Auth").hidden=false};
 $("v7Back").onclick=()=>{$("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("")};
-let recoveryActive=new URLSearchParams(location.hash.slice(1)).get("type")==="recovery"||new URLSearchParams(location.search).get("type")==="recovery";
+let recoveryActive=Boolean(window.v7RecoveryEntry)||new URLSearchParams(location.hash.slice(1)).get("type")==="recovery";
 function recoveryView(which){
  $("v7Gate").hidden=false;document.body.classList.add("v7locked");
  $("v7Session").hidden=true;
  for(const id of ["v7Welcome","v7Auth","v7RecoveryRequest","v7RecoveryUpdate"])$(id).hidden=id!==which;
 }
 client.auth.onAuthStateChange((event)=>{
- if(event==="PASSWORD_RECOVERY"){recoveryActive=true;recoveryView("v7RecoveryUpdate");message("Recovery link verified. Choose your new password.");}
+ if(event==="PASSWORD_RECOVERY"){recoveryActive=true;window.v7RecoveryEntry=true;recoveryView("v7RecoveryUpdate");message("Recovery link verified. Choose your new password.");}
 });
 $("v7Forgot").onclick=()=>{$("v7ResetEmail").value=$("v7Email").value;message("");recoveryView("v7RecoveryRequest")};
 $("v7ResetBack").onclick=()=>{message("");recoveryView("v7Auth")};
@@ -941,7 +945,7 @@ $("v7RecoveryUpdate").onsubmit=async e=>{
  message("Updating password…");
  const {error}=await client.auth.updateUser({password:pw});
  if(error){message("Password update failed: "+error.message);return}
- recoveryActive=false;$("v7NewPassword").value="";$("v7ConfirmPassword").value="";
+ recoveryActive=false;window.v7RecoveryEntry=false;$("v7NewPassword").value="";$("v7ConfirmPassword").value="";
  history.replaceState(null,"",location.pathname);
  await client.auth.signOut();
  recoveryView("v7Auth");
@@ -965,7 +969,7 @@ $("v7Exit").onclick=async()=>{
  $("v7Session").hidden=true;$("v7Gate").hidden=false;document.body.classList.add("v7locked");
  $("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("");render();
 };
-try{const {data:result}=await client.auth.getSession();if(recoveryActive)recoveryView("v7RecoveryUpdate");else if(result.session)await enterAccount(result.session)}catch(e){message("Unable to load your session: "+e.message)}
+try{const {data:result}=await client.auth.getSession();if(recoveryActive){recoveryView("v7RecoveryUpdate");if(!result.session)message("Recovery link expired or unavailable. Request a new password reset link.");}else if(result.session)await enterAccount(result.session)}catch(e){message("Unable to load your session: "+e.message)}
 </script>
 </body>
 </html>
