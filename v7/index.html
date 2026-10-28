@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manhwa Tracker v7 — development</title>
+<style>
+:root{color-scheme:dark;--bg:#0f1115;--panel:#171a21;--line:#303744;--text:#f4f6fb;--muted:#a5adbc;--accent:#8da7ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:24px 16px 90px}h1{font-size:clamp(24px,5vw,34px);margin:12px 0}h2{font-size:19px;margin:0 0 12px}
+.panel{padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:17px;margin:16px 0}
+label{display:block;margin:12px 0 6px;color:var(--muted);font-size:14px}
+input,button{font:inherit}input{width:100%;padding:13px;background:#101319;border:1px solid #444b59;border-radius:10px;color:var(--text)}
+button{border:1px solid var(--line);color:var(--text);background:#222735;border-radius:10px;padding:12px 15px;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}.primary{background:#30477e;border-color:#5875bc}.buttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.small{color:var(--muted);font-size:13px;line-height:1.5}.title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.item{display:flex;gap:10px;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:12px 0}.item>div:first-child{min-width:0;overflow-wrap:anywhere}
+.chapter{display:flex;align-items:center;gap:9px}.chapter button{min-width:39px;padding:8px}
+#message{min-height:20px;color:#e4c77b}.hidden{display:none}.badge{font-size:12px;color:#b4e8ce}
+@media(max-width:520px){.item{align-items:flex-start;flex-direction:column}.chapter{width:100%;justify-content:flex-end}}
+</style>
+</head>
+<body><main>
+<div class="title-row"><h1>Manhwa Tracker <span style="color:#8da7ff">v7</span></h1><span class="badge">DEVELOPMENT</span></div>
+<p class="small">Account and guest-mode prototype. The live v6.4 tracker is not connected or modified. Cloud progress is experimental; offline cloud syncing and conflict resolution are not implemented yet.</p>
+<div id="message" role="status" aria-live="polite"></div>
+<section class="panel" id="welcome">
+<h2>Choose how to continue</h2>
+<div class="buttons"><button class="primary" id="accountChoice">Use an account</button><button id="guestChoice">Continue as guest</button></div>
+<p class="small">Guest progress stays on this browser only. New libraries start empty.</p>
+</section>
+<section class="panel hidden" id="authPanel">
+<h2>Account</h2>
+<form id="authForm">
+<label for="email">Email</label><input id="email" type="email" autocomplete="email" required>
+<label for="password">Password</label><input id="password" type="password" autocomplete="current-password" minlength="6" required>
+<div class="buttons"><button type="submit" class="primary" id="signIn">Sign in</button><button type="button" id="register">Create account</button><button type="button" id="back">Back</button></div>
+</form>
+<p class="small">New accounts may require confirming the email before sign-in.</p>
+</section>
+<section class="panel hidden" id="libraryPanel">
+<div class="title-row"><h2 id="libraryHeading">My library</h2><button id="signOut">Exit</button></div>
+<p class="small" id="modeDescription"></p>
+<form id="addForm"><label for="newTitle">Add a title</label><input id="newTitle" placeholder="Manhwa title" required maxlength="250"><div class="buttons"><button class="primary" type="submit">Add title</button><button type="button" id="exportBtn">Export JSON</button></div></form>
+<p class="small" id="emptyMessage"></p><div id="items"></div>
+</section>
+</main>
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
+const client=createClient("https://lqsbnwujhqhtcbkbmbzx.supabase.co","sb_publishable_Q9gt-VVebZ5MfZz_fMprHQ_a2paH51e");
+const $=id=>document.getElementById(id);
+let mode=null,session=null,rows=[];
+const guestKey="manhwaTracker_v7_guest_draft";
+function message(s){$("message").textContent=s||""}
+function view(screen){for(const id of ["welcome","authPanel","libraryPanel"]) $(id).classList.toggle("hidden",id!==screen)}
+function guestLoad(){try{return JSON.parse(localStorage.getItem(guestKey)||"[]")}catch{return []}}
+function guestSave(){localStorage.setItem(guestKey,JSON.stringify(rows))}
+function safeTitleKey(name){return name.trim().normalize("NFKC").toLocaleLowerCase("en-US")}
+function render(){
+ $("libraryHeading").textContent=mode==="guest"?"Guest library":"My cloud library";
+ $("modeDescription").textContent=mode==="guest"?"Saved only in this browser. Export to back up.":"Experimental cloud mode: changes require a connection. Offline sync is not ready.";
+ $("emptyMessage").textContent=rows.length?"":"Your library is empty. Add a title to begin.";
+ $("items").replaceChildren();
+ for(const r of rows){
+  const line=document.createElement("div");line.className="item";
+  const label=document.createElement("div");label.textContent=r.title;
+  const controls=document.createElement("div");controls.className="chapter";
+  const minus=document.createElement("button");minus.textContent="−";minus.ariaLabel="Decrease chapter for "+r.title;
+  const number=document.createElement("strong");number.textContent=String(r.chapter);
+  const plus=document.createElement("button");plus.textContent="+";plus.ariaLabel="Increase chapter for "+r.title;
+  const remove=document.createElement("button");remove.textContent="Delete";remove.ariaLabel="Delete "+r.title;
+  async function setChapter(value){
+   if(value<0)return;
+   try{
+    if(mode==="guest"){r.chapter=value;guestSave()}
+    else {
+     const {data,error}=await client.from("user_library").update({chapter:value,revision:r.revision+1,updated_at:new Date().toISOString()}).eq("id",r.id).eq("revision",r.revision).select().single();
+     if(error)throw error;
+     Object.assign(r,data);
+    }
+    message("");render();
+   }catch(err){message("Unable to save. "+err.message+" Reload before retrying.")}
+  }
+  minus.onclick=()=>setChapter(Number(r.chapter)-1);plus.onclick=()=>setChapter(Number(r.chapter)+1);
+  remove.onclick=async()=>{
+   if(!confirm("Remove "+r.title+"?"))return;
+   try{
+    if(mode==="guest"){rows=rows.filter(x=>x.id!==r.id);guestSave()}
+    else{const {error}=await client.from("user_library").update({deleted_at:new Date().toISOString()}).eq("id",r.id);if(error)throw error;rows=rows.filter(x=>x.id!==r.id)}
+    render();
+   }catch(err){message(err.message)}
+  };
+  controls.append(minus,number,plus,remove);line.append(label,controls);$("items").append(line);
+ }
+}
+async function loadCloud(){
+ const {data,error}=await client.from("user_library").select("*").is("deleted_at",null).order("title");
+ if(error)throw error;rows=data;render();
+}
+$("accountChoice").onclick=()=>{message("");view("authPanel")};
+$("back").onclick=()=>{message("");view("welcome")};
+$("guestChoice").onclick=()=>{mode="guest";rows=guestLoad();render();view("libraryPanel")};
+$("authForm").onsubmit=async e=>{
+ e.preventDefault();message("Signing in...");
+ const {data,error}=await client.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+ if(error){message(error.message);return}
+ session=data.session;mode="cloud";try{await loadCloud();view("libraryPanel");message("Signed in.")}catch(err){message(err.message)}
+};
+$("register").onclick=async()=>{
+ const email=$("email").value.trim(),password=$("password").value;
+ if(!email||!password){message("Enter your email and password first.");return}
+ message("Creating account...");
+ const {data,error}=await client.auth.signUp({email,password});
+ if(error){message(error.message);return}
+ message(data.session?"Account created. Sign in to continue.":"Check your email for a confirmation link, then sign in.");
+};
+$("signOut").onclick=async()=>{
+ if(mode==="cloud") await client.auth.signOut();
+ session=null;mode=null;rows=[];message("");view("welcome");
+};
+$("addForm").onsubmit=async e=>{
+ e.preventDefault();
+ const title=$("newTitle").value.trim();if(!title)return;
+ if(rows.some(r=>safeTitleKey(r.title)===safeTitleKey(title))){message("That title already exists.");return}
+ try{
+  if(mode==="guest"){rows.push({id:crypto.randomUUID(),title,chapter:0});guestSave()}
+  else {
+   const {data,error}=await client.from("user_library").insert({title,title_key:safeTitleKey(title),chapter:0}).select().single();
+   if(error)throw error;rows.push(data);
+  }
+  $("newTitle").value="";message("");render();
+ }catch(err){message(err.message)}
+};
+$("exportBtn").onclick=()=>{
+ const data=rows.map(x=>({title:x.title,chapter:Number(x.chapter),favorite:!!x.favorite,notes:x.personal_notes||""}));
+ const blob=new Blob([JSON.stringify({format:"manhwa-tracker-v7",exportedAt:new Date().toISOString(),titles:data},null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="manhwa-tracker-v7-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+try{
+ const {data}=await client.auth.getSession();
+ if(data.session){session=data.session;mode="cloud";await loadCloud();view("libraryPanel")}
+}catch(err){message("Cloud unavailable: "+err.message)}
+</script></body></html>
