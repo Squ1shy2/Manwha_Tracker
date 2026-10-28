@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v6.4</title>
+<title>Manhwa Tracker v7.6</title>
 <style>
 :root{
   color-scheme:dark;
@@ -107,6 +107,41 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
   .stats{margin-top:8px}
 }
 
+
+#v7Gate{max-width:990px;margin:clamp(24px,5vh,64px) auto 40px;padding:0;border:1px solid var(--line);background:var(--panel);border-radius:22px;overflow:hidden}
+#v7Gate h2{margin:12px 0 15px;font-size:clamp(30px,4.8vw,52px);line-height:1.12;letter-spacing:-.035em}
+#v7Gate h2 span{color:#9bb2ff}
+#v7Gate p{color:var(--muted);line-height:1.55}
+.v7Hero{padding:clamp(24px,5vw,50px);background:radial-gradient(ellipse at 95% 5%,rgba(90,110,206,.2),transparent 62%),linear-gradient(145deg,#1c253a,#171a21 80%);border-bottom:1px solid var(--line)}
+.v7Eyebrow{font-size:11px;letter-spacing:.12em;font-weight:750;color:#b6c7eb;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.v7Dot{height:7px;width:7px;border-radius:50%;background:#7fe1b4;display:inline-block}
+.v7Dev{margin-left:auto;color:#84d9af;letter-spacing:.06em}
+.v7Hero>p{font-size:clamp(15px,1.8vw,18px);max-width:620px;margin-bottom:0}
+.v7Features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:20px clamp(20px,4vw,36px)}
+.v7Feature{background:#1d222d;border:1px solid var(--line);border-radius:13px;padding:15px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.v7FeatureIcon{color:#91abff;font-size:23px}
+.v7Feature strong{font-size:14px}
+.v7Feature small{font-size:12px;color:var(--muted);line-height:1.45}
+.v7Entry{margin:0 clamp(20px,4vw,36px) 28px;border-top:1px solid var(--line);padding-top:22px}
+.v7Entry h3{font-size:21px;margin:0 0 8px}
+.v7Entry p{margin:6px 0 14px}
+.v7EntryActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+#v7Gate button{min-height:45px;padding:11px 17px}
+#v7Gate .v7Primary{background:#3b5491;border-color:#6989d7;font-weight:650}
+#v7Auth label{display:block;margin:12px 0 5px;font-size:13px;color:#c3cbda}
+#v7Auth input{display:block;width:100%;margin:0 0 12px;padding:12px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px}
+#v7Gate .v7FinePrint{font-size:12px;color:#98a2b4;margin-top:14px}
+#v7Message{min-height:10px;color:#edca81;font-size:13px}
+#v7Welcome[hidden],#v7Auth[hidden]{display:none!important}
+@media(max-width:700px){#v7Gate{margin:14px 12px 24px;border-radius:17px}.v7Hero{padding:23px 19px}.v7Features{grid-template-columns:1fr;gap:8px;padding:14px 18px}.v7Feature{padding:12px 14px}.v7Entry{margin:0 18px 20px;padding-top:16px}.v7EntryActions{flex-direction:column}.v7EntryActions button{width:100%}.v7Dev{margin-left:0}}
+#v7Session{position:relative;z-index:6;background:#192333;padding:8px max(16px,env(safe-area-inset-left));display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#ddd}
+#v7Session[hidden],#v7Gate[hidden],#v7Auth[hidden]{display:none!important}
+#v7Sync{color:#a5cafa} #v7Resolve[hidden]{display:none!important}
+#v7ConflictDialog{max-width:min(94vw,580px);max-height:85vh;overflow:auto}
+.v7ConflictItem{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.v7ConflictItem label{display:block;padding:9px;margin-top:7px;border-radius:9px;background:var(--panel2)}#v7Exit{margin-left:auto}
+body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #importFile,body.v7locked #topBtn{display:none!important}
+@media(max-width:700px){#v7Gate{margin:3vh 12px;padding:16px}#v7Session{padding:10px 13px}#v7Exit{margin-left:0}}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -116,9 +151,42 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 <meta name="apple-mobile-web-app-title" content="Manhwa Tracker">
 
 </head>
-<body>
+<body class="v7locked">
+<section id="v7Gate" aria-label="Welcome to Manhwa Tracker">
+ <div class="v7Hero">
+  <div class="v7Eyebrow"><span class="v7Dot"></span> YOUR PERSONAL READING LIBRARY <span class="v7Dev">v7.6 PREVIEW</span></div>
+  <h2>Keep the story going.<br><span>Remember where you left off.</span></h2>
+  <p>Track chapters, organize favorites, and check publication statuses — without interrupting your reading.</p>
+ </div>
+ <div class="v7Features" aria-label="Tracker features">
+  <div class="v7Feature"><span class="v7FeatureIcon" aria-hidden="true">↗</span><strong>Progress at a glance</strong><small>Chapters, recents and favorites in one place.</small></div>
+  <div class="v7Feature"><span class="v7FeatureIcon" aria-hidden="true">☁</span><strong>Sync your library</strong><small>Sign in to access your progress on multiple devices.</small></div>
+  <div class="v7Feature"><span class="v7FeatureIcon" aria-hidden="true">✓</span><strong>Check publication status</strong><small>Compare sources and keep control of your status.</small></div>
+ </div>
+ <div class="v7Entry">
+  <div id="v7Welcome">
+   <h3>Ready to keep track?</h3>
+   <p>Use a free account for cloud synchronization, or continue locally as a guest.</p>
+   <div class="v7EntryActions">
+    <button id="v7Account" class="v7Primary" type="button">Sign in or create account</button>
+    <button id="v7Guest" type="button">Continue as guest</button>
+   </div>
+   <p class="v7FinePrint">No subscription required. Guest progress stays in this browser. Export your library whenever you like.</p>
+  </div>
+  <form id="v7Auth" hidden>
+   <h3>Welcome back</h3><p>Sign into your cloud library, or create an account to get started.</p>
+   <label for="v7Email">Email</label><input id="v7Email" type="email" required autocomplete="email" placeholder="you@example.com">
+   <label for="v7Password">Password</label><input id="v7Password" type="password" required minlength="6" autocomplete="current-password" placeholder="Your password">
+   <div class="v7EntryActions"><button class="v7Primary" type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div>
+   <p class="v7FinePrint">New accounts may need email confirmation before signing in. Don't share your password.</p>
+  </form>
+  <p id="v7Message" role="status" aria-live="polite"></p>
+ </div>
+</section>
+ <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
+<dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v6.4</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.6</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -204,7 +272,7 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 
 <script>
 const seed=[{"title": "A Flame Reborn", "chapter": 82, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "A Returner’s Magic Should Be Special", "chapter": 40, "letter": "A", "note": "Turned into Anime", "url": "", "status": "Completed • Anime"}, {"title": "A Rogue Guard in a Medieval Fantasy", "chapter": 11, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Academy Survival Guide", "chapter": 79, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Academy’s Genius Swordmaster", "chapter": 23, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Acadamy’s Genius Tamer", "chapter": 30, "letter": "A", "note": "", "url": "", "status": "Needs verification"}, {"title": "Admission Is a Waste of Time", "chapter": 35, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Advanced Player", "chapter": 101, "letter": "A", "note": "", "url": "", "status": "Completed"}, {"title": "After 10 Millenia in Hell", "chapter": 35, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "All Class Awakening Mage", "chapter": 160, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Artifact-Devouring", "chapter": 33, "letter": "A", "note": "", "url": "", "status": "Ongoing"}, {"title": "Bad Born Blood", "chapter": 0, "letter": "B", "note": "", "url": "", "status": "Ongoing"}, {"title": "Clever Cleaning Life of the Returned Genius Hunter", "chapter": 63, "letter": "C", "note": "", "url": "", "status": "Ongoing"}, {"title": "Cleric of Decay", "chapter": 79, "letter": "C", "note": "", "url": "", "status": "Hiatus"}, {"title": "Cosmic Heavenly Demon", "chapter": 19, "letter": "C", "note": "", "url": "", "status": "Ongoing"}, {"title": "Disaster Class Hero", "chapter": 37, "letter": "D", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Doom Breaker", "chapter": 0, "letter": "D", "note": "", "url": "", "status": "Hiatus"}, {"title": "Dragon Devouring Mage", "chapter": 80, "letter": "D", "note": "", "url": "", "status": "Ongoing"}, {"title": "Dragon Slayers Peerless Regression", "chapter": 101, "letter": "D", "note": "", "url": "", "status": "Ongoing"}, {"title": "Dungeon Odyssey", "chapter": 145, "letter": "D", "note": "", "url": "", "status": "Ongoing"}, {"title": "Dungeon Reset", "chapter": 84, "letter": "D", "note": "", "url": "", "status": "Completed"}, {"title": "Dungeons and Artifacts", "chapter": 43, "letter": "D", "note": "", "url": "", "status": "Completed"}, {"title": "Enrolling in the Transcendent Academy", "chapter": 141, "letter": "E", "note": "", "url": "", "status": "Ongoing"}, {"title": "Eternally Regressing Knight", "chapter": 72, "letter": "E", "note": "", "url": "", "status": "Ongoing"}, {"title": "FFF-Class Trash Hero", "chapter": 7, "letter": "F", "note": "", "url": "", "status": "Ongoing"}, {"title": "Genius Blinker", "chapter": 60, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Genius Tamer", "chapter": 30, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "God Level Assassin", "chapter": 139, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Got a Gallery in the Wild", "chapter": 10, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Green Skin", "chapter": 22, "letter": "G", "note": "", "url": "", "status": "Ongoing"}, {"title": "Hell Login", "chapter": 5, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "Helmut: The Forsaken Child", "chapter": 94, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "Hero Killer", "chapter": 72, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "How to Use a Returner", "chapter": 77, "letter": "H", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Am Destined for Greatness", "chapter": 140, "letter": "I", "note": "", "url": "", "status": "Completed"}, {"title": "I Became the Trashy First Prince", "chapter": 52, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Killed an Academy Player", "chapter": 64, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Married the Dragon That I Killed", "chapter": 9, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Obtained a Mythic Item", "chapter": 159, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "I Raided the Demon God’s Treasure Trove", "chapter": 0, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "Infinite Mage", "chapter": 186, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "Insanely Talented Player", "chapter": 13, "letter": "I", "note": "", "url": "", "status": "Ongoing"}, {"title": "Is This Hero for Real", "chapter": 101, "letter": "I", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Jack Be Invincible", "chapter": 121, "letter": "J", "note": "", "url": "", "status": "Hiatus"}, {"title": "Jungle Juice", "chapter": 193, "letter": "J", "note": "", "url": "", "status": "Ongoing / Side Stories"}, {"title": "Kill the Dragon", "chapter": 133, "letter": "K", "note": "", "url": "", "status": "Ongoing"}, {"title": "Kill the Hero", "chapter": 105, "letter": "K", "note": "", "url": "", "status": "Completed"}, {"title": "Latna Saga", "chapter": 298, "letter": "L", "note": "", "url": "", "status": "Hiatus"}, {"title": "Level 1 Player", "chapter": 56, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Level 999 Goblin", "chapter": 22, "letter": "L", "note": "", "url": "", "status": "Completed"}, {"title": "Leveling Beyond the MAX", "chapter": 53, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Leveling With the Gods", "chapter": 57, "letter": "L", "note": "", "url": "", "status": "Ongoing / Irregular"}, {"title": "Lord of the Goblins", "chapter": 10, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Lout of the Counts Family", "chapter": 128, "letter": "L", "note": "", "url": "", "status": "Ongoing"}, {"title": "Margraves Bastard Son Was the Emperor", "chapter": 62, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Martial God Who Regressed to Level 2", "chapter": 87, "letter": "M", "note": "", "url": "", "status": "Hiatus"}, {"title": "Max Level Hero Has Returned", "chapter": 89, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Max Level Newbie", "chapter": 231, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Max Talent Player", "chapter": 55, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "Maxed Out Player", "chapter": 0, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "My Exclusive Tower Guide", "chapter": 99, "letter": "M", "note": "", "url": "", "status": "Ongoing"}, {"title": "National Job Change", "chapter": 135, "letter": "N", "note": "", "url": "", "status": "Ongoing"}, {"title": "Necromancer Academy", "chapter": 180, "letter": "N", "note": "", "url": "", "status": "Hiatus (English)"}, {"title": "Overgeared", "chapter": 120, "letter": "O", "note": "", "url": "", "status": "Ongoing"}, {"title": "Past Life Regressor", "chapter": 46, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Patron of Villains", "chapter": 5, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Pick Me Up", "chapter": 187, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Player Who Can’t Level Up", "chapter": 204, "letter": "P", "note": "", "url": "", "status": "Hiatus"}, {"title": "Priest of Corruption", "chapter": 53, "letter": "P", "note": "", "url": "", "status": "Ongoing"}, {"title": "Ranker’s Return", "chapter": 68, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Reincarnation of the Hero Party’s Grand Mage", "chapter": 89, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Reincarnator", "chapter": 113, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Return of the 8th Class Magician", "chapter": 62, "letter": "R", "note": "Finished — Not Read", "url": "", "status": "Completed"}, {"title": "Return of the Disaster Class Hero", "chapter": 48, "letter": "R", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Return of the Frozen Player", "chapter": 125, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Return of the Legendary Spear Knight", "chapter": 52, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Returned C Rank Tank", "chapter": 47, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Returning With Absolutely Nothing", "chapter": 86, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Revenge of the Iron-Blooded Sword Hound", "chapter": 130, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Rise from the Rubble", "chapter": 92, "letter": "R", "note": "", "url": "", "status": "Ongoing"}, {"title": "Second Life Ranker", "chapter": 123, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Skeleton Soldier Failed to Protect the Dungeon", "chapter": 258, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Skill Master Levels Up", "chapter": 140, "letter": "S", "note": "", "url": "", "status": "Hiatus"}, {"title": "Slave B", "chapter": 80, "letter": "S", "note": "Completed", "url": "", "status": "Completed"}, {"title": "Solo Login", "chapter": 144, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Solo Max-Level Newbie", "chapter": 83, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "SSS-Class Revival Hunter", "chapter": 85, "letter": "S", "note": "", "url": "", "status": "Hiatus"}, {"title": "SSS-Class Suicide Hunter", "chapter": 86, "letter": "S", "note": "", "url": "", "status": "Check duplicate"}, {"title": "Standard of Reincarnation", "chapter": 168, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Stellar Swordmaster", "chapter": 49, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Survival Story of a Sword King in a Fantasy World", "chapter": 103, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Surviving as a Barbarian", "chapter": 69, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Surviving the Game as a Barbarian", "chapter": 164, "letter": "S", "note": "", "url": "", "status": "Ongoing"}, {"title": "Talent Swallowing Magician", "chapter": 50, "letter": "T", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "Terminally Ill Genius Dark Knight", "chapter": 128, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Academy’s Sashimi Sword Master", "chapter": 67, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Art of Reincarnation", "chapter": 168, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The Beginning After the End", "chapter": 175, "letter": "T", "note": "", "url": "", "status": "Ongoing • Anime"}, {"title": "The Constellation That Returned From Hell", "chapter": 102, "letter": "T", "note": "", "url": "", "status": "Completed"}, {"title": "The Constellations Are My Disciples", "chapter": 41, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Dark Mage’s Return to Enlistment", "chapter": 1, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Dark Magician Transmigrates After 66666 Years", "chapter": 98, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Demon Prince Goes to the Academy", "chapter": 80, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Descent of the Demonic Master", "chapter": 32, "letter": "T", "note": "", "url": "", "status": "Completed"}, {"title": "The Extra’s Academy Survival Guide", "chapter": 41, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Frozen Player", "chapter": 125, "letter": "T", "note": "", "url": "", "status": "Hiatus / Season Break"}, {"title": "The Game That I Came From", "chapter": 186, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Genius Assassin Who Takes It All", "chapter": 8, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The Great Mage of the Hero’s Party", "chapter": 89, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Greatest Estate Developer", "chapter": 176, "letter": "T", "note": "Finished — Read", "url": "", "status": "Completed"}, {"title": "The Heavenly Demon Can’t Live a Normal Life", "chapter": 70, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Hero Returns", "chapter": 107, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Indomitable Martial King", "chapter": 11, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Knight King Who Returned With a God", "chapter": 122, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Last Adventurer", "chapter": 72, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Legendary Hero Is an Honors Class Student", "chapter": 51, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Legendary Moonlight Sculptor", "chapter": 169, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The Live", "chapter": 142, "letter": "T", "note": "Finished — Not Read", "url": "", "status": "Completed"}, {"title": "The Newbie Civil Servant Hunts Villains Before Going Home", "chapter": 0, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Only Necromancer", "chapter": 82, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Overpowered Newbie", "chapter": 131, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Perks of Being an S-Class Heroine", "chapter": 56, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Player Hides His Past", "chapter": 106, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Player Who Can’t Level Up", "chapter": 6, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Regressed Mercenary’s Machinations", "chapter": 61, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Regressed Son of a Duke Is an Assassin", "chapter": 77, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Stellar Sword", "chapter": 49, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Strongest Evolutionary Necromancer", "chapter": 105, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Tutorial Is Too Hard", "chapter": 58, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "The Warrior Returns", "chapter": 161, "letter": "T", "note": "", "url": "", "status": "Hiatus"}, {"title": "The World After the Fall", "chapter": 186, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "There’s No Such Thing as a Bad Lady", "chapter": 43, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Time Limited Genius", "chapter": 128, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Transcendent Academy", "chapter": 141, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Tyrant of the Tower Defense Game", "chapter": 100, "letter": "T", "note": "", "url": "", "status": "Ongoing"}, {"title": "Ultimate Scheming System", "chapter": 378, "letter": "U", "note": "", "url": "", "status": "Ongoing"}, {"title": "Ultimate Shut-In", "chapter": 72, "letter": "U", "note": "", "url": "", "status": "Ongoing"}, {"title": "Unordinary", "chapter": 248, "letter": "U", "note": "", "url": "", "status": "Ongoing"}, {"title": "Warriors Ballad", "chapter": 0, "letter": "W", "note": "", "url": "", "status": "Ongoing"}, {"title": "World’s Strongest Troll", "chapter": 29, "letter": "W", "note": "", "url": "", "status": "Ongoing"}, {"title": "Worn and Torn Newbie", "chapter": 149, "letter": "W", "note": "", "url": "", "status": "Ongoing"}, {"title": "Worthless Regression", "chapter": 86, "letter": "W", "note": "", "url": "", "status": "Ongoing"}];
-const KEY="manhwaTracker_v6_4";
+const KEY="manhwaTracker_v7_1_guest";
 const OLDKEYS=["manhwaTracker_v6_3","manhwaTracker_v6_2","manhwaTracker_v6_1","manhwaTracker_v6","manhwaTracker_v5","manhwaTracker_v4","manhwaTracker_v3","manhwaTracker_v2","manhwaTracker_v1"];
 const STATUS_OPTIONS=[
   "Ongoing",
@@ -218,8 +286,8 @@ const STATUS_OPTIONS=[
   "Needs verification"
 ];
 
-let saved=JSON.parse(localStorage.getItem(KEY)||"null");
-if(!saved){
+let saved=[];
+if(false){
   let old=null;
   for(const k of OLDKEYS){
     old=JSON.parse(localStorage.getItem(k)||"null");
@@ -248,7 +316,7 @@ if(!saved){
     for(const x of seed) if(!have.has(x.title)) saved.push(x);
   }
 }
-let data=(saved||seed).map(x=>({
+let data=(saved||[]).map(x=>({
   ...x,
   favorite:Boolean(x.favorite),
   addedAt:x.addedAt||null,
@@ -262,36 +330,71 @@ let recentsExpanded=false;
 function touch(i){
   if(i!==null && i!==undefined && data[i]) data[i].lastUpdated=Date.now();
 }
-function persist(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function persist(){ if(window.v7Mode==="guest")localStorage.setItem(KEY,JSON.stringify(data));render();window.v7OnChange?.();}
 function searchUrl(t){return "https://www.google.com/search?q="+encodeURIComponent(t+" manhwa official")}
 function deriveLetter(t){const m=(t||"").trim().match(/[A-Za-z0-9]/);return m?m[0].toUpperCase():"#"}
 function mangaUpdatesUrl(t){return "https://www.mangaupdates.com/search.html?search="+encodeURIComponent(t)}
 function anilistUrl(t){return "https://anilist.co/search/manga?search="+encodeURIComponent(t)}
 function mapAniStatus(s){return s==="RELEASING"?"Ongoing":s==="FINISHED"?"Completed":s==="CANCELLED"?"Cancelled":s==="HIATUS"?"Hiatus / Season Break":s||"Unknown"}
 
-async function checkAniList(title){
-  const q=`query ($search:String){Media(search:$search,type:MANGA){id status title{romaji english native} siteUrl}}`;
-  const r=await fetch("https://graphql.anilist.co",{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Accept":"application/json"},
-    body:JSON.stringify({query:q,variables:{search:title}})
-  });
-  if(!r.ok) throw new Error("AniList HTTP "+r.status);
-  const j=await r.json();
-  return j?.data?.Media||null;
+const verificationCache=new Map();
+const normalizedTitle=t=>String(t||"").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
+function reliableMatch(asked,candidates){
+ const needle=normalizedTitle(asked);
+ if(!needle)return false;
+ return candidates.some(t=>normalizedTitle(t)===needle);
 }
-
+async function checkAniList(title){
+ const q=`query ($search:String){Media(search:$search,type:MANGA){id status title{romaji english native} siteUrl}}`;
+ const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:q,variables:{search:title}})});
+ if(!r.ok)throw Error("HTTP "+r.status);
+ const j=await r.json();
+ if(j.errors?.length)throw Error(j.errors[0].message||"API error");
+ const m=j?.data?.Media;
+ if(!m)return null;
+ return {provider:"AniList",name:m.title?.english||m.title?.romaji||m.title?.native||"",names:[m.title?.english,m.title?.romaji,m.title?.native],status:mapAniStatus(m.status),rawStatus:m.status,url:m.siteUrl||("https://anilist.co/manga/"+m.id),id:m.id};
+}
+async function checkMangaUpdates(title){
+ if(typeof window.v7MangaLookup!=="function") {
+  return {provider:"MangaUpdates",name:title,names:[],status:null,note:"Sign in for automatic verification",url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
+ }
+ const result=await window.v7MangaLookup(title);
+ if(!result?.matched) {
+  return {provider:"MangaUpdates",name:title,names:[],status:null,note:"No exact title match",url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
+ }
+ return {provider:"MangaUpdates",name:result.title||title,names:[result.title],status:result.status||"Unknown",rawStatus:result.rawStatus,url:result.url,id:result.id};
+}
 async function checkOne(i){
-  const x=data[i], el=document.getElementById("api-"+i);
-  if(el) el.textContent="Checking AniList…";
+ const x=data[i],el=document.getElementById("api-"+i);
+ if(!x)return;
+ if(el)el.textContent="Checking AniList and MangaUpdates…";
+ const cached=verificationCache.get(x.title);
+ if(cached&&Date.now()-cached.time<15*60*1000){if(el)el.replaceChildren(...cached.nodes.map(n=>n.cloneNode(true)));return}
+ const results=[];
+ for(const [name,fn] of [["AniList",checkAniList],["MangaUpdates",checkMangaUpdates]]){
   try{
-    const m=await checkAniList(x.title);
-    if(!m) throw new Error("No match");
-    apiCache[x.title]=m;
-    if(el) el.textContent=`AniList says: ${mapAniStatus(m.status)} • matched “${m.title.english||m.title.romaji||m.title.native}”`;
-  }catch(e){
-    if(el) el.textContent="No clean AniList match. Use the source links, then change the dropdown manually.";
+   const item=await fn(x.title);
+   results.push(item?{...item,match:reliableMatch(x.title,item.names)}:{provider:name,error:"No result"});
+  }catch(e){results.push({provider:name,error:e.message||"Unavailable"})}
+ }
+ if(!el)return;
+ el.replaceChildren();
+ const nodes=[];
+ for(const result of results){
+  const line=document.createElement("div");
+  if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";
+  else if(result.note)line.textContent=result.provider+": "+result.note+" • ";
+  else line.textContent=result.provider+": "+(result.match?"Exact title match":"Possible match — verify title")+" • "+(result.status||"Status unavailable")+" • ";
+  if(result.url){
+   const link=document.createElement("a");link.href=result.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Source";line.append(link);
   }
+  el.append(line);nodes.push(line.cloneNode(true));
+ }
+ if(!results.some(r=>!r.error&&r.match)){
+  const line=document.createElement("div");line.textContent="No confirmed match. Keep your manually selected status.";el.append(line);nodes.push(line.cloneNode(true));
+ }
+ verificationCache.set(x.title,{time:Date.now(),nodes});
+ // Only show suggestions. The user's saved status and chapter are never modified by checking.
 }
 
 
@@ -316,9 +419,8 @@ async function addTitleFromForm(){
     lastUpdated:Date.now(),
     url
   });
-  localStorage.setItem(KEY,JSON.stringify(data));
   document.getElementById("addDialog").close();
-  render();
+  persist();
   const idx=data.length-1;
   await checkOne(idx);
 }
@@ -332,7 +434,7 @@ async function checkAll(){
     await new Promise(r=>setTimeout(r,350));
   }
   btn.disabled=false; btn.textContent="Check statuses";
-  alert(`Checked ${targets.length} unverified titles. Use the status dropdown after reviewing the match.`);
+  alert(`Checked ${targets.length} unverified titles across available sources. Review suggestions before changing a status.`);
 }
 
 function makeStatusSelect(x){
@@ -559,6 +661,7 @@ document.getElementById("exportBtn").onclick=()=>{
 document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
 document.getElementById("importFile").addEventListener("change",async e=>{
   const f=e.target.files[0]; if(!f) return;
+  if(window.v7Mode==="cloud"){alert("Cloud bulk import will be enabled after migration safeguards. No changes made.");e.target.value="";return;}
   try{
     const imported=JSON.parse(await f.text());
     if(!Array.isArray(imported)) throw 0;
@@ -605,5 +708,220 @@ if ("serviceWorker" in navigator) {
 </script>
 
 <button id="topBtn" class="topBtn" aria-label="Back to top">↑</button>
+
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
+const client=createClient("https://lqsbnwujhqhtcbkbmbzx.supabase.co","sb_publishable_Q9gt-VVebZ5MfZz_fMprHQ_a2paH51e");
+window.v7MangaLookup=async function(title){
+ if(window.v7Mode!=="cloud")return {matched:false};
+ const {data,error}=await client.functions.invoke("mangaupdates-lookup",{body:{title}});
+ if(error)throw Error(error.message||"MangaUpdates server unavailable");
+ if(data?.error)throw Error(data.error);
+ return data;
+};
+const $=id=>document.getElementById(id);
+const guestKey="manhwaTracker_v7_1_guest";
+const key=t=>String(t||"").trim().normalize("NFKC").toLocaleLowerCase("en-US");
+let user=null, remote=new Map(), syncQueue=Promise.resolve(), stopped=false;
+let pending=null, pendingGeneration=0, conflictKeys=[];
+const notify=(msg)=>{$("v7Sync").textContent=msg;$("v7Resolve").hidden=!stopped};
+const message=(msg)=>{$("v7Message").textContent=msg||""};
+const pendingKey=()=>user?"manhwaTracker_v7_2_pending_"+user.id:"";
+const cacheKey=()=>user?"manhwaTracker_v7_2_cache_"+user.id:"";
+function readStored(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch{return null}}
+function storePending(){
+ if(!user)return;
+ if(!pending)pending={data:[],base:[...remote.values()],createdAt:new Date().toISOString()};
+ pending.data=structuredClone(data);
+ localStorage.setItem(pendingKey(),JSON.stringify(pending));
+ pendingGeneration++;
+}
+function toLocal(r){const src=r.source_data||{};return {...src,title:r.title,chapter:Number(r.chapter),status:r.publication_status_override||src.status||"Needs verification",favorite:!!r.favorite,note:r.personal_notes||"",url:r.reading_url||"",letter:deriveLetter(r.title),lastUpdated:src.lastUpdated||null,_cloudId:r.id}}
+function toRemote(x){return {title:x.title,title_key:key(x.title),chapter:Number(x.chapter)||0,favorite:!!x.favorite,reading_url:x.url||null,personal_notes:x.note||null,publication_status_override:x.status||null,source_data:{...x,_cloudId:undefined}}}
+const equivalent=(x,r)=>{
+ const a=toRemote(x),b=toRemote(toLocal(r));
+ return JSON.stringify(a)===JSON.stringify(b)
+};
+function enter(){
+ $("v7Gate").hidden=true;$("v7Session").hidden=false;
+ document.body.classList.remove("v7locked");
+ render();
+}
+function enterGuest(){
+ user=null;window.v7Mode="guest";
+ try{const d=JSON.parse(localStorage.getItem(guestKey)||"[]");data=Array.isArray(d)?d:[]}catch{data=[]}
+ $("v7SessionLabel").textContent="Guest library";notify("Local only");enter();
+}
+async function enterAccount(session){
+ if(!session?.user)return;
+ user=session.user;window.v7Mode="cloud";notify("Loading cloud library…");
+ pending=readStored(pendingKey());
+ const {data:records,error}=await client.from("user_library").select("*").is("deleted_at",null).order("title");
+ if(error){
+   const backup=pending?.data||readStored(cacheKey());
+   if(!Array.isArray(backup))throw error;
+   data=structuredClone(backup);
+   remote=new Map((pending?.base||[]).map(r=>[key(r.title),r]));
+   $("v7SessionLabel").textContent="Signed in: "+(user.email||"account");
+   notify(pending?"Offline • changes pending":"Offline • cached copy");
+   enter();return;
+ }
+ remote=new Map(records.map(r=>[key(r.title),r]));
+ if(pending&&Array.isArray(pending.data)&&Array.isArray(pending.base)){
+  data=structuredClone(pending.data);
+  notify("Pending edits restored • syncing…");
+ }else{pending=null;data=records.map(toLocal);notify("Synced • online required")}
+ localStorage.setItem(cacheKey(),JSON.stringify(data));
+ $("v7SessionLabel").textContent="Signed in: "+(user.email||"account");
+ enter();
+ if(pending)syncQueue=syncQueue.then(flush).catch(console.error);
+}
+async function flush(){
+ if(!user||window.v7Mode!=="cloud"||stopped||!pending)return;
+ if(!navigator.onLine){notify("Offline • changes queued on device");return}
+ const generation=pendingGeneration;
+ const snapshot=structuredClone(pending.data);
+ const baseMap=new Map(pending.base.map(r=>[key(r.title),r]));
+ const desiredMap=new Map(snapshot.map(x=>[key(x.title),x]));
+ const changedKeys=new Set([...baseMap.keys(),...desiredMap.keys()].filter(k=>{
+  const old=baseMap.get(k),next=desiredMap.get(k);
+  return !old||!next||!equivalent(next,old);
+ }));
+ if(!changedKeys.size){
+  if(generation===pendingGeneration){pending=null;localStorage.removeItem(pendingKey());notify("Synced • online required")}
+  return;
+ }
+ try{
+  const {data:current,error:loadError}=await client.from("user_library").select("*").in("title_key",[...changedKeys]).is("deleted_at",null);
+  if(loadError)throw loadError;
+  const live=new Map(current.map(r=>[key(r.title),r]));
+  // Check all conflicting revisions BEFORE writing anything.
+  conflictKeys=[...changedKeys].filter(k=>{const old=baseMap.get(k),now=live.get(k);return old?(!now||now.revision!==old.revision):!!now});
+  if(conflictKeys.length)throw Error("Conflicting edits on "+conflictKeys.length+" title(s).");
+  for(const k of changedKeys){
+   const old=baseMap.get(k),next=desiredMap.get(k);
+   if(old&&!next){
+    const {data:changed,error}=await client.from("user_library").update({deleted_at:new Date().toISOString(),revision:old.revision+1}).eq("id",old.id).eq("revision",old.revision).select().maybeSingle();
+    if(error||!changed)throw Error("Conflict while deleting "+old.title);
+    remote.delete(k);
+   }else if(old&&next){
+    const {data:changed,error}=await client.from("user_library").update({...toRemote(next),revision:old.revision+1,updated_at:new Date().toISOString()}).eq("id",old.id).eq("revision",old.revision).select().maybeSingle();
+    if(error||!changed)throw Error("Conflict while saving "+next.title);
+    remote.set(k,changed);
+   }else if(next){
+    const {data:created,error}=await client.from("user_library").insert(toRemote(next)).select().single();
+    if(error)throw error;
+    remote.set(k,created);
+   }
+  }
+  if(generation===pendingGeneration){
+   pending=null;localStorage.removeItem(pendingKey());
+   localStorage.setItem(cacheKey(),JSON.stringify(data));
+   notify("Synced • online required");
+  }else{
+   // More edits arrived while saving; new baseline is the successfully saved server state.
+   pending.base=[...remote.values()];
+   pending.data=structuredClone(data);
+   localStorage.setItem(pendingKey(),JSON.stringify(pending));
+   notify("Saving additional changes…");
+  }
+ }catch(e){
+  stopped=true;notify("Sync conflict • local backup retained");
+  message("Cloud sync paused: "+e.message+" Export JSON before refreshing. Local edits are preserved.");
+ }
+}
+
+const recoveryKey=()=>user?"manhwaTracker_v7_3_recovery_"+user.id:"";
+const conflictsFor=(base,desired,live)=>{
+ const changed=[...new Set([...base.keys(),...desired.keys()])].filter(k=>{const old=base.get(k),local=desired.get(k);return !old||!local||!equivalent(local,old)});
+ return {changed,conflicts:changed.filter(k=>{const old=base.get(k),now=live.get(k);return old?(!now||old.revision!==now.revision):!!now})};
+};
+async function resolveDialog(){
+ if(!pending||!user)return;
+ const {data:rows,error}=await client.from("user_library").select("*").is("deleted_at",null);
+ if(error)throw error;
+ const base=new Map(pending.base.map(r=>[key(r.title),r]));
+ const desired=new Map(pending.data.map(x=>[key(x.title),x]));
+ const live=new Map(rows.map(r=>[key(r.title),r]));
+ conflictKeys=conflictsFor(base,desired,live).conflicts;
+ if(!conflictKeys.length){stopped=false;notify("Retrying sync…");syncQueue=syncQueue.then(flush);return}
+ const list=$("v7ConflictList");list.replaceChildren();
+ for(const [i,k] of conflictKeys.entries()){
+  const item=document.createElement("div");item.className="v7ConflictItem";
+  const title=document.createElement("strong");title.textContent=desired.get(k)?.title||live.get(k)?.title||base.get(k)?.title||k;item.append(title);
+  for(const opt of ["cloud","local"]){
+   if(opt==="local"&&base.has(k)&&!live.has(k))continue;
+   const label=document.createElement("label"),input=document.createElement("input");
+   input.type="radio";input.name="choice-"+i;input.value=opt;input.checked=opt==="cloud";
+   const x=opt==="cloud"?(live.has(k)?toLocal(live.get(k)):null):desired.get(k);
+   label.append(input,document.createTextNode(" "+(opt==="cloud"?"Cloud Version":"Local Device")+": "+(x?"Chapter "+x.chapter+" • "+(x.status||"No status"):"Deleted")));
+   item.append(label);
+  }list.append(item);
+ }
+ $("v7ConflictError").textContent="";$("v7ConflictDialog").showModal();
+}
+$("v7Resolve").onclick=()=>resolveDialog().catch(e=>message(e.message));
+$("v7CancelResolve").onclick=()=>$("v7ConflictDialog").close();
+$("v7ApplyResolve").onclick=async()=>{
+ const btn=$("v7ApplyResolve");btn.disabled=true;
+ try{
+  const {data:rows,error}=await client.from("user_library").select("*").is("deleted_at",null);
+  if(error)throw error;
+  const base=new Map(pending.base.map(r=>[key(r.title),r])),desired=new Map(pending.data.map(x=>[key(x.title),x])),live=new Map(rows.map(r=>[key(r.title),r]));
+  const {changed,conflicts}=conflictsFor(base,desired,live);
+  if(conflicts.some(k=>!conflictKeys.includes(k)))throw Error("New conflicts appeared. Close and reopen this dialog.");
+  const decisions=new Map();
+  for(const [i,k] of conflictKeys.entries()){
+   const input=$("v7ConflictList").querySelector('input[name="choice-'+i+'"]:checked');
+   if(!input)throw Error("Please select a version for each title.");
+   decisions.set(k,input.value);
+  }
+  localStorage.setItem(recoveryKey(),JSON.stringify({savedAt:new Date().toISOString(),pending:structuredClone(pending)}));
+  const merged=new Map(rows.map(r=>[key(r.title),toLocal(r)]));
+  for(const k of changed){
+   if(decisions.get(k)==="cloud")continue;
+   const x=desired.get(k);if(x)merged.set(k,x);else merged.delete(k);
+  }
+  data=[...merged.values()];remote=live;
+  pending={data:structuredClone(data),base:rows,createdAt:new Date().toISOString()};
+  pendingGeneration++;localStorage.setItem(pendingKey(),JSON.stringify(pending));localStorage.setItem(cacheKey(),JSON.stringify(data));
+  stopped=false;render();$("v7ConflictDialog").close();notify("Applying decisions…");
+  syncQueue=syncQueue.then(flush).catch(e=>message(e.message));
+ }catch(e){$("v7ConflictError").textContent=e.message}finally{btn.disabled=false}
+};
+
+window.addEventListener("online",()=>{
+ if(window.v7Mode!=="cloud"||!pending||stopped)return;
+ notify("Back online • syncing…");
+ syncQueue=syncQueue.then(flush).catch(console.error);
+});
+window.v7OnChange=()=>{
+ if(window.v7Mode!=="cloud")return;
+ try{storePending();notify(navigator.onLine?"Saving…":"Offline • changes queued on device")}
+ catch(e){notify("Storage error • export your library");message("Unable to save offline backup: "+e.message);return}
+ syncQueue=syncQueue.then(flush).catch(e=>{notify("Sync error");console.error(e)});
+};
+$("v7Guest").onclick=enterGuest;
+$("v7Account").onclick=()=>{$("v7Welcome").hidden=true;$("v7Auth").hidden=false};
+$("v7Back").onclick=()=>{$("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("")};
+$("v7Auth").onsubmit=async e=>{
+ e.preventDefault();message("Signing in...");
+ const {data:result,error}=await client.auth.signInWithPassword({email:$("v7Email").value.trim(),password:$("v7Password").value});
+ if(error){message(error.message);return}
+ try{await enterAccount(result.session);message("")}catch(e){message("Failed to load library: "+e.message)}
+};
+$("v7Register").onclick=async()=>{
+ message("Creating account…");
+ const {data:result,error}=await client.auth.signUp({email:$("v7Email").value.trim(),password:$("v7Password").value});
+ message(error?error.message:result.session?"Account created. Sign in.":"Check your email for a confirmation link.");
+};
+$("v7Exit").onclick=async()=>{
+ if(window.v7Mode==="cloud"){await syncQueue;if(!stopped)await client.auth.signOut();}
+ window.v7Mode=null;user=null;data=[];remote.clear();pending=null;stopped=false;
+ $("v7Session").hidden=true;$("v7Gate").hidden=false;document.body.classList.add("v7locked");
+ $("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("");render();
+};
+try{const {data:result}=await client.auth.getSession();if(result.session)await enterAccount(result.session)}catch(e){message("Unable to load your session: "+e.message)}
+</script>
 </body>
 </html>
