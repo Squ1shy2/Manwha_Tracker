@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.1</title>
+<title>Manhwa Tracker v7.2</title>
 <style>
 :root{
   color-scheme:dark;
@@ -127,7 +127,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
 </head>
 <body class="v7locked">
 <section id="v7Gate" aria-label="Account access">
- <h2>Manhwa Tracker v7.1 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
+ <h2>Manhwa Tracker v7.2 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
  <p>Full tracker interface with optional cloud account. Your original v6.4 site remains separate.</p>
  <div id="v7Welcome"><button id="v7Account" type="button">Use an account</button> <button id="v7Guest" type="button">Continue as guest</button></div>
  <form id="v7Auth" hidden><label>Email <input id="v7Email" type="email" required autocomplete="email"></label><label>Password <input id="v7Password" type="password" required minlength="6" autocomplete="current-password"></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div></form>
@@ -630,8 +630,19 @@ const $=id=>document.getElementById(id);
 const guestKey="manhwaTracker_v7_1_guest";
 const key=t=>String(t||"").trim().normalize("NFKC").toLocaleLowerCase("en-US");
 let user=null, remote=new Map(), syncQueue=Promise.resolve(), stopped=false;
+let pending=null, pendingGeneration=0;
 const notify=(msg)=>{$("v7Sync").textContent=msg};
 const message=(msg)=>{$("v7Message").textContent=msg||""};
+const pendingKey=()=>user?"manhwaTracker_v7_2_pending_"+user.id:"";
+const cacheKey=()=>user?"manhwaTracker_v7_2_cache_"+user.id:"";
+function readStored(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch{return null}}
+function storePending(){
+ if(!user)return;
+ if(!pending)pending={data:[],base:[...remote.values()],createdAt:new Date().toISOString()};
+ pending.data=structuredClone(data);
+ localStorage.setItem(pendingKey(),JSON.stringify(pending));
+ pendingGeneration++;
+}
 function toLocal(r){const src=r.source_data||{};return {...src,title:r.title,chapter:Number(r.chapter),status:r.publication_status_override||src.status||"Needs verification",favorite:!!r.favorite,note:r.personal_notes||"",url:r.reading_url||"",letter:deriveLetter(r.title),lastUpdated:src.lastUpdated||null,_cloudId:r.id}}
 function toRemote(x){return {title:x.title,title_key:key(x.title),chapter:Number(x.chapter)||0,favorite:!!x.favorite,reading_url:x.url||null,personal_notes:x.note||null,publication_status_override:x.status||null,source_data:{...x,_cloudId:undefined}}}
 const equivalent=(x,r)=>{
@@ -651,45 +662,93 @@ function enterGuest(){
 async function enterAccount(session){
  if(!session?.user)return;
  user=session.user;window.v7Mode="cloud";notify("Loading cloud library…");
+ pending=readStored(pendingKey());
  const {data:records,error}=await client.from("user_library").select("*").is("deleted_at",null).order("title");
- if(error)throw error;
+ if(error){
+   const backup=pending?.data||readStored(cacheKey());
+   if(!Array.isArray(backup))throw error;
+   data=structuredClone(backup);
+   remote=new Map((pending?.base||[]).map(r=>[key(r.title),r]));
+   $("v7SessionLabel").textContent="Signed in: "+(user.email||"account");
+   notify(pending?"Offline • changes pending":"Offline • cached copy");
+   enter();return;
+ }
  remote=new Map(records.map(r=>[key(r.title),r]));
- data=records.map(toLocal);
+ if(pending&&Array.isArray(pending.data)&&Array.isArray(pending.base)){
+  data=structuredClone(pending.data);
+  notify("Pending edits restored • syncing…");
+ }else{pending=null;data=records.map(toLocal);notify("Synced • online required")}
+ localStorage.setItem(cacheKey(),JSON.stringify(data));
  $("v7SessionLabel").textContent="Signed in: "+(user.email||"account");
- notify("Synced • online required");enter();
+ enter();
+ if(pending)syncQueue=syncQueue.then(flush).catch(console.error);
 }
-function backupPending(){try{localStorage.setItem("manhwaTracker_v7_1_pending_"+user.id,JSON.stringify(data))}catch{}}
 async function flush(){
- if(!user||window.v7Mode!=="cloud"||stopped)return;
- if(!navigator.onLine){backupPending();notify("Offline • changes not uploaded");return}
- const desired=data.map(x=>structuredClone(x));
- const localKeys=new Set(desired.map(x=>key(x.title)));
+ if(!user||window.v7Mode!=="cloud"||stopped||!pending)return;
+ if(!navigator.onLine){notify("Offline • changes queued on device");return}
+ const generation=pendingGeneration;
+ const snapshot=structuredClone(pending.data);
+ const baseMap=new Map(pending.base.map(r=>[key(r.title),r]));
+ const desiredMap=new Map(snapshot.map(x=>[key(x.title),x]));
+ const changedKeys=new Set([...baseMap.keys(),...desiredMap.keys()].filter(k=>{
+  const old=baseMap.get(k),next=desiredMap.get(k);
+  return !old||!next||!equivalent(next,old);
+ }));
+ if(!changedKeys.size){
+  if(generation===pendingGeneration){pending=null;localStorage.removeItem(pendingKey());notify("Synced • online required")}
+  return;
+ }
  try{
- for(const [k,r] of [...remote]){
-  if(localKeys.has(k))continue;
-  const {data:changed,error}=await client.from("user_library").update({deleted_at:new Date().toISOString(),revision:r.revision+1}).eq("id",r.id).eq("revision",r.revision).select().maybeSingle();
-  if(error||!changed)throw Error("A record changed elsewhere. Refresh before making further edits.");
-  remote.delete(k);
- }
- for(const x of desired){
-  const k=key(x.title),r=remote.get(k),values=toRemote(x);
-  if(r&&equivalent(x,r))continue;
-  if(r){
-   const {data:changed,error}=await client.from("user_library").update({...values,revision:r.revision+1,updated_at:new Date().toISOString()}).eq("id",r.id).eq("revision",r.revision).select().maybeSingle();
-   if(error||!changed)throw Error("Conflicting edit on "+x.title+". Export a backup, then refresh to reconcile.");
-   remote.set(k,changed);
-  }else{
-   const {data:created,error}=await client.from("user_library").insert(values).select().single();
-   if(error)throw error;
-   remote.set(k,created);
+  const {data:current,error:loadError}=await client.from("user_library").select("*").in("title_key",[...changedKeys]).is("deleted_at",null);
+  if(loadError)throw loadError;
+  const live=new Map(current.map(r=>[key(r.title),r]));
+  // Check all conflicting revisions BEFORE writing anything.
+  for(const k of changedKeys){
+   const old=baseMap.get(k),now=live.get(k);
+   if(old&&(!now||now.revision!==old.revision))throw Error("Conflict on "+(desiredMap.get(k)?.title||old.title)+": a different device modified this title.");
+   if(!old&&now)throw Error("Conflict: title already exists on another device.");
   }
+  for(const k of changedKeys){
+   const old=baseMap.get(k),next=desiredMap.get(k);
+   if(old&&!next){
+    const {data:changed,error}=await client.from("user_library").update({deleted_at:new Date().toISOString(),revision:old.revision+1}).eq("id",old.id).eq("revision",old.revision).select().maybeSingle();
+    if(error||!changed)throw Error("Conflict while deleting "+old.title);
+    remote.delete(k);
+   }else if(old&&next){
+    const {data:changed,error}=await client.from("user_library").update({...toRemote(next),revision:old.revision+1,updated_at:new Date().toISOString()}).eq("id",old.id).eq("revision",old.revision).select().maybeSingle();
+    if(error||!changed)throw Error("Conflict while saving "+next.title);
+    remote.set(k,changed);
+   }else if(next){
+    const {data:created,error}=await client.from("user_library").insert(toRemote(next)).select().single();
+    if(error)throw error;
+    remote.set(k,created);
+   }
+  }
+  if(generation===pendingGeneration){
+   pending=null;localStorage.removeItem(pendingKey());
+   localStorage.setItem(cacheKey(),JSON.stringify(data));
+   notify("Synced • online required");
+  }else{
+   // More edits arrived while saving; new baseline is the successfully saved server state.
+   pending.base=[...remote.values()];
+   pending.data=structuredClone(data);
+   localStorage.setItem(pendingKey(),JSON.stringify(pending));
+   notify("Saving additional changes…");
+  }
+ }catch(e){
+  stopped=true;notify("Sync conflict • local backup retained");
+  message("Cloud sync paused: "+e.message+" Export JSON before refreshing. Local edits are preserved.");
  }
- notify("Synced • online required");
- }catch(e){stopped=true;backupPending();notify("Sync stopped • backup stored locally");alert("Cloud sync issue: "+e.message+"\nExport JSON before refreshing. Changes remain visible here.");}
 }
+window.addEventListener("online",()=>{
+ if(window.v7Mode!=="cloud"||!pending||stopped)return;
+ notify("Back online • syncing…");
+ syncQueue=syncQueue.then(flush).catch(console.error);
+});
 window.v7OnChange=()=>{
  if(window.v7Mode!=="cloud")return;
- notify("Saving…");
+ try{storePending();notify(navigator.onLine?"Saving…":"Offline • changes queued on device")}
+ catch(e){notify("Storage error • export your library");message("Unable to save offline backup: "+e.message);return}
  syncQueue=syncQueue.then(flush).catch(e=>{notify("Sync error");console.error(e)});
 };
 $("v7Guest").onclick=enterGuest;
@@ -708,7 +767,7 @@ $("v7Register").onclick=async()=>{
 };
 $("v7Exit").onclick=async()=>{
  if(window.v7Mode==="cloud"){await syncQueue;if(!stopped)await client.auth.signOut();}
- window.v7Mode=null;user=null;data=[];remote.clear();stopped=false;
+ window.v7Mode=null;user=null;data=[];remote.clear();pending=null;stopped=false;
  $("v7Session").hidden=true;$("v7Gate").hidden=false;document.body.classList.add("v7locked");
  $("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("");render();
 };
