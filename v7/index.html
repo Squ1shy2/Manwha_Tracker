@@ -40,7 +40,7 @@ button:disabled{opacity:.5;cursor:wait}.primary{background:#30477e;border-color:
 <section class="panel hidden" id="libraryPanel">
 <div class="title-row"><h2 id="libraryHeading">My library</h2><button id="signOut">Exit</button></div>
 <p class="small" id="modeDescription"></p>
-<form id="addForm"><label for="newTitle">Add a title</label><input id="newTitle" placeholder="Manhwa title" required maxlength="250"><div class="buttons"><button class="primary" type="submit">Add title</button><button type="button" id="exportBtn">Export JSON</button></div></form>
+<form id="addForm"><label for="newTitle">Add a title</label><input id="newTitle" placeholder="Manhwa title" required maxlength="250"><div class="buttons"><button class="primary" type="submit">Add title</button><button type="button" id="exportBtn">Export JSON</button><button type="button" id="importBtn">Import JSON</button><input id="importFile" class="hidden" type="file" accept=".json,application/json" aria-label="Choose tracker backup"></div></form>
 <p class="small" id="emptyMessage"></p><div id="items"></div>
 </section>
 </main>
@@ -130,8 +130,34 @@ $("addForm").onsubmit=async e=>{
   $("newTitle").value="";message("");render();
  }catch(err){message(err.message)}
 };
+
+// Import backups from v6.4 (an array of titles) or v7 (an object with a titles array).
+// During the prototype, import is guest-only to avoid accidentally modifying an account's cloud library.
+$("importBtn").onclick=()=>{
+ if(mode!=="guest"){message("Cloud import is not enabled in this prototype yet. Use guest mode to test backup compatibility.");return}
+ $("importFile").click();
+};
+$("importFile").onchange=async e=>{
+ const file=e.target.files?.[0];e.target.value="";if(!file)return;
+ try{
+  const parsed=JSON.parse(await file.text());
+  const list=Array.isArray(parsed)?parsed:parsed?.titles;
+  if(!Array.isArray(list)||list.length>20000||list.some(x=>!x||typeof x.title!=="string"||!x.title.trim()||x.title.length>250||!Number.isFinite(Number(x.chapter??0))||Number(x.chapter??0)<0))throw Error("Unrecognized or invalid tracker JSON.");
+  if(!confirm("Import "+list.length+" titles into this browser's guest library? Existing matching titles will be kept unchanged."))return;
+  const known=new Set(rows.map(x=>safeTitleKey(x.title)));let added=0;
+  for(const x of list){
+   const key=safeTitleKey(x.title);if(known.has(key))continue;
+   known.add(key);added++;
+   rows.push({id:crypto.randomUUID(),title:x.title.trim(),chapter:Number(x.chapter??0),favorite:!!x.favorite,
+    personal_notes:String(x.note??x.notes??""),reading_url:String(x.url??""),publication_status_override:String(x.status??""),
+    source_data:{original_v6_record:x}});
+  }
+  guestSave();render();message("Imported "+added+" new titles. "+(list.length-added)+" duplicates skipped.");
+ }catch(err){message("Import failed: "+err.message)}
+};
+
 $("exportBtn").onclick=()=>{
- const data=rows.map(x=>({title:x.title,chapter:Number(x.chapter),favorite:!!x.favorite,notes:x.personal_notes||""}));
+ const data=rows.map(x=>({title:x.title,chapter:Number(x.chapter),favorite:!!x.favorite,notes:x.personal_notes||"",url:x.reading_url||"",status:x.publication_status_override||"",source_data:x.source_data||{}}));
  const blob=new Blob([JSON.stringify({format:"manhwa-tracker-v7",exportedAt:new Date().toISOString(),titles:data},null,2)],{type:"application/json"});
  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="manhwa-tracker-v7-backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
