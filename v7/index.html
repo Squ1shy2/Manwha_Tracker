@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.6</title>
+<title>Manhwa Tracker v7.7</title>
 <style>
 :root{
   color-scheme:dark;
@@ -128,11 +128,11 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 .v7EntryActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 #v7Gate button{min-height:45px;padding:11px 17px}
 #v7Gate .v7Primary{background:#3b5491;border-color:#6989d7;font-weight:650}
-#v7Auth label{display:block;margin:12px 0 5px;font-size:13px;color:#c3cbda}
-#v7Auth input{display:block;width:100%;margin:0 0 12px;padding:12px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px}
+#v7Auth label,#v7RecoveryRequest label,#v7RecoveryUpdate label{display:block;margin:12px 0 5px;font-size:13px;color:#c3cbda}
+#v7Auth input,#v7RecoveryRequest input,#v7RecoveryUpdate input{display:block;width:100%;margin:0 0 12px;padding:12px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px}
 #v7Gate .v7FinePrint{font-size:12px;color:#98a2b4;margin-top:14px}
-#v7Message{min-height:10px;color:#edca81;font-size:13px}
-#v7Welcome[hidden],#v7Auth[hidden]{display:none!important}
+#v7TextAction{border:0;background:transparent}#v7Gate .v7TextAction{border:0;background:transparent;color:#a9bfff;padding:8px 0;margin-top:8px;min-height:0;text-decoration:underline}#v7Message{min-height:10px;color:#edca81;font-size:13px}
+#v7Welcome[hidden],#v7Auth[hidden],#v7RecoveryRequest[hidden],#v7RecoveryUpdate[hidden]{display:none!important}
 @media(max-width:700px){#v7Gate{margin:14px 12px 24px;border-radius:17px}.v7Hero{padding:23px 19px}.v7Features{grid-template-columns:1fr;gap:8px;padding:14px 18px}.v7Feature{padding:12px 14px}.v7Entry{margin:0 18px 20px;padding-top:16px}.v7EntryActions{flex-direction:column}.v7EntryActions button{width:100%}.v7Dev{margin-left:0}}
 #v7Session{position:relative;z-index:6;background:#192333;padding:8px max(16px,env(safe-area-inset-left));display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#ddd}
 #v7Session[hidden],#v7Gate[hidden],#v7Auth[hidden]{display:none!important}
@@ -178,7 +178,19 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
    <label for="v7Email">Email</label><input id="v7Email" type="email" required autocomplete="email" placeholder="you@example.com">
    <label for="v7Password">Password</label><input id="v7Password" type="password" required minlength="6" autocomplete="current-password" placeholder="Your password">
    <div class="v7EntryActions"><button class="v7Primary" type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div>
+   <button id="v7Forgot" type="button" class="v7TextAction">Forgot password?</button>
    <p class="v7FinePrint">New accounts may need email confirmation before signing in. Don't share your password.</p>
+  </form>
+  <form id="v7RecoveryRequest" hidden>
+   <h3>Reset your password</h3><p>Enter your account email and we’ll send a recovery link.</p>
+   <label for="v7ResetEmail">Email</label><input id="v7ResetEmail" type="email" required autocomplete="email" placeholder="you@example.com">
+   <div class="v7EntryActions"><button class="v7Primary" type="submit">Send recovery link</button><button id="v7ResetBack" type="button">Back to sign in</button></div>
+  </form>
+  <form id="v7RecoveryUpdate" hidden>
+   <h3>Choose a new password</h3><p>Your recovery link has been verified. Enter a new password to regain access.</p>
+   <label for="v7NewPassword">New password (at least 12 characters)</label><input id="v7NewPassword" type="password" required minlength="12" autocomplete="new-password">
+   <label for="v7ConfirmPassword">Confirm new password</label><input id="v7ConfirmPassword" type="password" required minlength="12" autocomplete="new-password">
+   <div class="v7EntryActions"><button class="v7Primary" type="submit">Update password</button></div>
   </form>
   <p id="v7Message" role="status" aria-live="polite"></p>
  </div>
@@ -186,7 +198,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
  <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
 <dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.6</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.7</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -904,6 +916,37 @@ window.v7OnChange=()=>{
 $("v7Guest").onclick=enterGuest;
 $("v7Account").onclick=()=>{$("v7Welcome").hidden=true;$("v7Auth").hidden=false};
 $("v7Back").onclick=()=>{$("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("")};
+let recoveryActive=new URLSearchParams(location.hash.slice(1)).get("type")==="recovery"||new URLSearchParams(location.search).get("type")==="recovery";
+function recoveryView(which){
+ $("v7Gate").hidden=false;document.body.classList.add("v7locked");
+ $("v7Session").hidden=true;
+ for(const id of ["v7Welcome","v7Auth","v7RecoveryRequest","v7RecoveryUpdate"])$(id).hidden=id!==which;
+}
+client.auth.onAuthStateChange((event)=>{
+ if(event==="PASSWORD_RECOVERY"){recoveryActive=true;recoveryView("v7RecoveryUpdate");message("Recovery link verified. Choose your new password.");}
+});
+$("v7Forgot").onclick=()=>{$("v7ResetEmail").value=$("v7Email").value;message("");recoveryView("v7RecoveryRequest")};
+$("v7ResetBack").onclick=()=>{message("");recoveryView("v7Auth")};
+$("v7RecoveryRequest").onsubmit=async e=>{
+ e.preventDefault();const email=$("v7ResetEmail").value.trim();
+ message("Requesting recovery email…");
+ const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+ message(error?"Unable to send recovery email: "+error.message:"If an account exists for this email, a recovery link will be sent. Check your inbox.");
+};
+$("v7RecoveryUpdate").onsubmit=async e=>{
+ e.preventDefault();
+ const pw=$("v7NewPassword").value;
+ if(pw.length<12){message("New password must have at least 12 characters.");return}
+ if(pw!==$("v7ConfirmPassword").value){message("Passwords do not match.");return}
+ message("Updating password…");
+ const {error}=await client.auth.updateUser({password:pw});
+ if(error){message("Password update failed: "+error.message);return}
+ recoveryActive=false;$("v7NewPassword").value="";$("v7ConfirmPassword").value="";
+ history.replaceState(null,"",location.pathname);
+ await client.auth.signOut();
+ recoveryView("v7Auth");
+ message("Password changed. Sign in with your new password.");
+};
 $("v7Auth").onsubmit=async e=>{
  e.preventDefault();message("Signing in...");
  const {data:result,error}=await client.auth.signInWithPassword({email:$("v7Email").value.trim(),password:$("v7Password").value});
@@ -911,6 +954,7 @@ $("v7Auth").onsubmit=async e=>{
  try{await enterAccount(result.session);message("")}catch(e){message("Failed to load library: "+e.message)}
 };
 $("v7Register").onclick=async()=>{
+ if($("v7Password").value.length<12){message("New passwords must have at least 12 characters.");return}
  message("Creating account…");
  const {data:result,error}=await client.auth.signUp({email:$("v7Email").value.trim(),password:$("v7Password").value});
  message(error?error.message:result.session?"Account created. Sign in.":"Check your email for a confirmation link.");
@@ -921,7 +965,7 @@ $("v7Exit").onclick=async()=>{
  $("v7Session").hidden=true;$("v7Gate").hidden=false;document.body.classList.add("v7locked");
  $("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("");render();
 };
-try{const {data:result}=await client.auth.getSession();if(result.session)await enterAccount(result.session)}catch(e){message("Unable to load your session: "+e.message)}
+try{const {data:result}=await client.auth.getSession();if(result.session&&!recoveryActive)await enterAccount(result.session)}catch(e){message("Unable to load your session: "+e.message)}
 </script>
 </body>
 </html>
