@@ -291,7 +291,7 @@ function anilistUrl(t){return "https://anilist.co/search/manga?search="+encodeUR
 function mapAniStatus(s){return s==="RELEASING"?"Ongoing":s==="FINISHED"?"Completed":s==="CANCELLED"?"Cancelled":s==="HIATUS"?"Hiatus / Season Break":s||"Unknown"}
 
 const verificationCache=new Map();
-const normalizedTitle=t=>String(t||"").normalize("NFKC").toLowerCase().replace(/[^\\p{L}\\p{N}]+/gu," ").trim();
+const normalizedTitle=t=>String(t||"").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
 function reliableMatch(asked,candidates){
  const needle=normalizedTitle(asked);
  if(!needle)return false;
