@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.2</title>
+<title>Manhwa Tracker v7.3</title>
 <style>
 :root{
   color-scheme:dark;
@@ -113,7 +113,10 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 #v7Auth label{display:block;margin:12px 0}#v7Auth input{display:block;width:100%;margin-top:5px;padding:11px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px}
 #v7Session{position:relative;z-index:6;background:#192333;padding:8px max(16px,env(safe-area-inset-left));display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#ddd}
 #v7Session[hidden],#v7Gate[hidden],#v7Auth[hidden]{display:none!important}
-#v7Sync{color:#a5cafa}#v7Exit{margin-left:auto}
+#v7Sync{color:#a5cafa} #v7Resolve[hidden]{display:none!important}
+#v7ConflictDialog{max-width:min(94vw,580px);max-height:85vh;overflow:auto}
+.v7ConflictItem{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.v7ConflictItem label{display:block;padding:9px;margin-top:7px;border-radius:9px;background:var(--panel2)}#v7Exit{margin-left:auto}
 body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #importFile,body.v7locked #topBtn{display:none!important}
 @media(max-width:700px){#v7Gate{margin:3vh 12px;padding:16px}#v7Session{padding:10px 13px}#v7Exit{margin-left:0}}
 </style>
@@ -127,15 +130,16 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
 </head>
 <body class="v7locked">
 <section id="v7Gate" aria-label="Account access">
- <h2>Manhwa Tracker v7.2 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
+ <h2>Manhwa Tracker v7.3 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
  <p>Full tracker interface with optional cloud account. Your original v6.4 site remains separate.</p>
  <div id="v7Welcome"><button id="v7Account" type="button">Use an account</button> <button id="v7Guest" type="button">Continue as guest</button></div>
  <form id="v7Auth" hidden><label>Email <input id="v7Email" type="email" required autocomplete="email"></label><label>Password <input id="v7Password" type="password" required minlength="6" autocomplete="current-password"></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div></form>
  <p id="v7Message" role="status" aria-live="polite"></p>
  </section>
- <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Exit" type="button">Exit / Sign out</button></div>
+ <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
+<dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.1</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.3</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -630,8 +634,8 @@ const $=id=>document.getElementById(id);
 const guestKey="manhwaTracker_v7_1_guest";
 const key=t=>String(t||"").trim().normalize("NFKC").toLocaleLowerCase("en-US");
 let user=null, remote=new Map(), syncQueue=Promise.resolve(), stopped=false;
-let pending=null, pendingGeneration=0;
-const notify=(msg)=>{$("v7Sync").textContent=msg};
+let pending=null, pendingGeneration=0, conflictKeys=[];
+const notify=(msg)=>{$("v7Sync").textContent=msg;$("v7Resolve").hidden=!stopped};
 const message=(msg)=>{$("v7Message").textContent=msg||""};
 const pendingKey=()=>user?"manhwaTracker_v7_2_pending_"+user.id:"";
 const cacheKey=()=>user?"manhwaTracker_v7_2_cache_"+user.id:"";
@@ -703,11 +707,8 @@ async function flush(){
   if(loadError)throw loadError;
   const live=new Map(current.map(r=>[key(r.title),r]));
   // Check all conflicting revisions BEFORE writing anything.
-  for(const k of changedKeys){
-   const old=baseMap.get(k),now=live.get(k);
-   if(old&&(!now||now.revision!==old.revision))throw Error("Conflict on "+(desiredMap.get(k)?.title||old.title)+": a different device modified this title.");
-   if(!old&&now)throw Error("Conflict: title already exists on another device.");
-  }
+  conflictKeys=[...changedKeys].filter(k=>{const old=baseMap.get(k),now=live.get(k);return old?(!now||now.revision!==old.revision):!!now});
+  if(conflictKeys.length)throw Error("Conflicting edits on "+conflictKeys.length+" title(s).");
   for(const k of changedKeys){
    const old=baseMap.get(k),next=desiredMap.get(k);
    if(old&&!next){
@@ -740,6 +741,66 @@ async function flush(){
   message("Cloud sync paused: "+e.message+" Export JSON before refreshing. Local edits are preserved.");
  }
 }
+
+const recoveryKey=()=>user?"manhwaTracker_v7_3_recovery_"+user.id:"";
+const conflictsFor=(base,desired,live)=>{
+ const changed=[...new Set([...base.keys(),...desired.keys()])].filter(k=>{const old=base.get(k),local=desired.get(k);return !old||!local||!equivalent(local,old)});
+ return {changed,conflicts:changed.filter(k=>{const old=base.get(k),now=live.get(k);return old?(!now||old.revision!==now.revision):!!now})};
+};
+async function resolveDialog(){
+ if(!pending||!user)return;
+ const {data:rows,error}=await client.from("user_library").select("*").is("deleted_at",null);
+ if(error)throw error;
+ const base=new Map(pending.base.map(r=>[key(r.title),r]));
+ const desired=new Map(pending.data.map(x=>[key(x.title),x]));
+ const live=new Map(rows.map(r=>[key(r.title),r]));
+ conflictKeys=conflictsFor(base,desired,live).conflicts;
+ if(!conflictKeys.length){stopped=false;notify("Retrying sync…");syncQueue=syncQueue.then(flush);return}
+ const list=$("v7ConflictList");list.replaceChildren();
+ for(const [i,k] of conflictKeys.entries()){
+  const item=document.createElement("div");item.className="v7ConflictItem";
+  const title=document.createElement("strong");title.textContent=desired.get(k)?.title||live.get(k)?.title||base.get(k)?.title||k;item.append(title);
+  for(const opt of ["cloud","local"]){
+   if(opt==="local"&&base.has(k)&&!live.has(k))continue;
+   const label=document.createElement("label"),input=document.createElement("input");
+   input.type="radio";input.name="choice-"+i;input.value=opt;input.checked=opt==="cloud";
+   const x=opt==="cloud"?(live.has(k)?toLocal(live.get(k)):null):desired.get(k);
+   label.append(input,document.createTextNode(" "+(opt==="cloud"?"Cloud Version":"Local Device")+": "+(x?"Chapter "+x.chapter+" • "+(x.status||"No status"):"Deleted")));
+   item.append(label);
+  }list.append(item);
+ }
+ $("v7ConflictError").textContent="";$("v7ConflictDialog").showModal();
+}
+$("v7Resolve").onclick=()=>resolveDialog().catch(e=>message(e.message));
+$("v7CancelResolve").onclick=()=>$("v7ConflictDialog").close();
+$("v7ApplyResolve").onclick=async()=>{
+ const btn=$("v7ApplyResolve");btn.disabled=true;
+ try{
+  const {data:rows,error}=await client.from("user_library").select("*").is("deleted_at",null);
+  if(error)throw error;
+  const base=new Map(pending.base.map(r=>[key(r.title),r])),desired=new Map(pending.data.map(x=>[key(x.title),x])),live=new Map(rows.map(r=>[key(r.title),r]));
+  const {changed,conflicts}=conflictsFor(base,desired,live);
+  if(conflicts.some(k=>!conflictKeys.includes(k)))throw Error("New conflicts appeared. Close and reopen this dialog.");
+  const decisions=new Map();
+  for(const [i,k] of conflictKeys.entries()){
+   const input=$("v7ConflictList").querySelector('input[name="choice-'+i+'"]:checked');
+   if(!input)throw Error("Please select a version for each title.");
+   decisions.set(k,input.value);
+  }
+  localStorage.setItem(recoveryKey(),JSON.stringify({savedAt:new Date().toISOString(),pending:structuredClone(pending)}));
+  const merged=new Map(rows.map(r=>[key(r.title),toLocal(r)]));
+  for(const k of changed){
+   if(decisions.get(k)==="cloud")continue;
+   const x=desired.get(k);if(x)merged.set(k,x);else merged.delete(k);
+  }
+  data=[...merged.values()];remote=live;
+  pending={data:structuredClone(data),base:rows,createdAt:new Date().toISOString()};
+  pendingGeneration++;localStorage.setItem(pendingKey(),JSON.stringify(pending));localStorage.setItem(cacheKey(),JSON.stringify(data));
+  stopped=false;render();$("v7ConflictDialog").close();notify("Applying decisions…");
+  syncQueue=syncQueue.then(flush).catch(e=>message(e.message));
+ }catch(e){$("v7ConflictError").textContent=e.message}finally{btn.disabled=false}
+};
+
 window.addEventListener("online",()=>{
  if(window.v7Mode!=="cloud"||!pending||stopped)return;
  notify("Back online • syncing…");
