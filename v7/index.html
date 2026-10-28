@@ -298,14 +298,20 @@ function reliableMatch(asked,candidates){
  return candidates.some(t=>normalizedTitle(t)===needle);
 }
 async function checkAniList(title){
- const q=`query ($search:String){Media(search:$search,type:MANGA){id status title{romaji english native} siteUrl}}`;
+ // Search multiple candidates: AniList often has distinct adaptations under the same English alias.
+ const q=`query ($search:String){Page(page:1,perPage:15){media(search:$search,type:MANGA){id status format chapters synonyms countryOfOrigin title{romaji english native} siteUrl}}}`;
  const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:q,variables:{search:title}})});
  if(!r.ok)throw Error("HTTP "+r.status);
  const j=await r.json();
  if(j.errors?.length)throw Error(j.errors[0].message||"API error");
- const m=j?.data?.Media;
- if(!m)return null;
- return {provider:"AniList",name:m.title?.english||m.title?.romaji||m.title?.native||"",names:[m.title?.english,m.title?.romaji,m.title?.native],status:mapAniStatus(m.status),rawStatus:m.status,url:m.siteUrl||("https://anilist.co/manga/"+m.id),id:m.id};
+ const media=j?.data?.Page?.media||[];
+ const candidates=media.map(m=>({provider:"AniList",name:m.title?.english||m.title?.romaji||m.title?.native||"",names:[m.title?.english,m.title?.romaji,m.title?.native,...(m.synonyms||[])],status:mapAniStatus(m.status),rawStatus:m.status,format:m.format,chapters:m.chapters,url:m.siteUrl||("https://anilist.co/manga/"+m.id),id:m.id}));
+ const matched=candidates.filter(m=>reliableMatch(title,m.names));
+ // Never imply a unique, verified series when several adaptations share a synonym.
+ if(matched.length>1)return {provider:"AniList",ambiguous:true,candidates:matched.slice(0,5),name:title,names:[],url:"https://anilist.co/search/manga?search="+encodeURIComponent(title)};
+ if(matched.length===1)return {...matched[0],match:true};
+ if(candidates.length)return {...candidates[0],match:false};
+ return null;
 }
 async function checkMangaUpdates(title){
  // MangaUpdates does not consistently permit direct browser requests.
@@ -343,8 +349,16 @@ async function checkOne(i){
  const nodes=[];
  for(const result of results){
   const line=document.createElement("div");
-  if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";\n  else if(result.note)line.textContent=result.provider+": "+result.note+" ";
-  else line.textContent=result.provider+": "+(result.match?"Exact title match":"Possible match — verify title")+" • "+(result.status||"Status unavailable")+" • ";
+  if(result.ambiguous){
+   line.textContent="AniList: Multiple possible editions — choose the correct adaptation: ";
+   for(const c of result.candidates){
+    const link=document.createElement("a");link.href=c.url;link.target="_blank";link.rel="noopener noreferrer";
+    link.textContent=(c.name||"Edition")+" ("+(c.status||"Unknown")+(c.chapters?", "+c.chapters+" chapters":"")+")";
+    line.append(link,document.createTextNode(" · "));
+   }
+  }
+  else if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";\n  else if(result.note)line.textContent=result.provider+": "+result.note+" ";
+  else line.textContent=result.provider+": "+(result.match?"Matching title (confirm edition)":"Possible match — verify title")+" • "+(result.status||"Status unavailable")+" • ";
   if(result.url){
    const link=document.createElement("a");link.href=result.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Source";line.append(link);
   }
