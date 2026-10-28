@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.5</title>
+<title>Manhwa Tracker v7.6</title>
 <style>
 :root{
   color-scheme:dark;
@@ -108,9 +108,32 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 }
 
 
-#v7Gate{max-width:660px;margin:6vh auto 0;padding:24px;border:1px solid var(--line);background:var(--panel);border-radius:16px}
-#v7Gate h2{margin:0 0 10px}#v7Gate p{color:var(--muted);line-height:1.5}
-#v7Auth label{display:block;margin:12px 0}#v7Auth input{display:block;width:100%;margin-top:5px;padding:11px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px}
+#v7Gate{max-width:990px;margin:clamp(24px,5vh,64px) auto 40px;padding:0;border:1px solid var(--line);background:var(--panel);border-radius:22px;overflow:hidden}
+#v7Gate h2{margin:12px 0 15px;font-size:clamp(30px,4.8vw,52px);line-height:1.12;letter-spacing:-.035em}
+#v7Gate h2 span{color:#9bb2ff}
+#v7Gate p{color:var(--muted);line-height:1.55}
+.v7Hero{padding:clamp(24px,5vw,50px);background:radial-gradient(ellipse at 95% 5%,rgba(90,110,206,.2),transparent 62%),linear-gradient(145deg,#1c253a,#171a21 80%);border-bottom:1px solid var(--line)}
+.v7Eyebrow{font-size:11px;letter-spacing:.12em;font-weight:750;color:#b6c7eb;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.v7Dot{height:7px;width:7px;border-radius:50%;background:#7fe1b4;display:inline-block}
+.v7Dev{margin-left:auto;color:#84d9af;letter-spacing:.06em}
+.v7Hero>p{font-size:clamp(15px,1.8vw,18px);max-width:620px;margin-bottom:0}
+.v7Features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:20px clamp(20px,4vw,36px)}
+.v7Feature{background:#1d222d;border:1px solid var(--line);border-radius:13px;padding:15px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.v7FeatureIcon{color:#91abff;font-size:23px}
+.v7Feature strong{font-size:14px}
+.v7Feature small{font-size:12px;color:var(--muted);line-height:1.45}
+.v7Entry{margin:0 clamp(20px,4vw,36px) 28px;border-top:1px solid var(--line);padding-top:22px}
+.v7Entry h3{font-size:21px;margin:0 0 8px}
+.v7Entry p{margin:6px 0 14px}
+.v7EntryActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+#v7Gate button{min-height:45px;padding:11px 17px}
+#v7Gate .v7Primary{background:#3b5491;border-color:#6989d7;font-weight:650}
+#v7Auth label{display:block;margin:12px 0 5px;font-size:13px;color:#c3cbda}
+#v7Auth input{display:block;width:100%;margin:0 0 12px;padding:12px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:9px}
+#v7Gate .v7FinePrint{font-size:12px;color:#98a2b4;margin-top:14px}
+#v7Message{min-height:10px;color:#edca81;font-size:13px}
+#v7Welcome[hidden],#v7Auth[hidden]{display:none!important}
+@media(max-width:700px){#v7Gate{margin:14px 12px 24px;border-radius:17px}.v7Hero{padding:23px 19px}.v7Features{grid-template-columns:1fr;gap:8px;padding:14px 18px}.v7Feature{padding:12px 14px}.v7Entry{margin:0 18px 20px;padding-top:16px}.v7EntryActions{flex-direction:column}.v7EntryActions button{width:100%}.v7Dev{margin-left:0}}
 #v7Session{position:relative;z-index:6;background:#192333;padding:8px max(16px,env(safe-area-inset-left));display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:#ddd}
 #v7Session[hidden],#v7Gate[hidden],#v7Auth[hidden]{display:none!important}
 #v7Sync{color:#a5cafa} #v7Resolve[hidden]{display:none!important}
@@ -129,17 +152,41 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
 
 </head>
 <body class="v7locked">
-<section id="v7Gate" aria-label="Account access">
- <h2>Manhwa Tracker v7.5 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
- <p>Full tracker interface with optional cloud account. Your original v6.4 site remains separate.</p>
- <div id="v7Welcome"><button id="v7Account" type="button">Use an account</button> <button id="v7Guest" type="button">Continue as guest</button></div>
- <form id="v7Auth" hidden><label>Email <input id="v7Email" type="email" required autocomplete="email"></label><label>Password <input id="v7Password" type="password" required minlength="6" autocomplete="current-password"></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div></form>
- <p id="v7Message" role="status" aria-live="polite"></p>
- </section>
+<section id="v7Gate" aria-label="Welcome to Manhwa Tracker">
+ <div class="v7Hero">
+  <div class="v7Eyebrow"><span class="v7Dot"></span> YOUR PERSONAL READING LIBRARY <span class="v7Dev">v7.6 PREVIEW</span></div>
+  <h2>Keep the story going.<br><span>Remember where you left off.</span></h2>
+  <p>Track chapters, organize favorites, and check publication statuses — without interrupting your reading.</p>
+ </div>
+ <div class="v7Features" aria-label="Tracker features">
+  <div class="v7Feature"><span class="v7FeatureIcon" aria-hidden="true">↗</span><strong>Progress at a glance</strong><small>Chapters, recents and favorites in one place.</small></div>
+  <div class="v7Feature"><span class="v7FeatureIcon" aria-hidden="true">☁</span><strong>Sync your library</strong><small>Sign in to access your progress on multiple devices.</small></div>
+  <div class="v7Feature"><span class="v7FeatureIcon" aria-hidden="true">✓</span><strong>Check publication status</strong><small>Compare sources and keep control of your status.</small></div>
+ </div>
+ <div class="v7Entry">
+  <div id="v7Welcome">
+   <h3>Ready to keep track?</h3>
+   <p>Use a free account for cloud synchronization, or continue locally as a guest.</p>
+   <div class="v7EntryActions">
+    <button id="v7Account" class="v7Primary" type="button">Sign in or create account</button>
+    <button id="v7Guest" type="button">Continue as guest</button>
+   </div>
+   <p class="v7FinePrint">No subscription required. Guest progress stays in this browser. Export your library whenever you like.</p>
+  </div>
+  <form id="v7Auth" hidden>
+   <h3>Welcome back</h3><p>Sign into your cloud library, or create an account to get started.</p>
+   <label for="v7Email">Email</label><input id="v7Email" type="email" required autocomplete="email" placeholder="you@example.com">
+   <label for="v7Password">Password</label><input id="v7Password" type="password" required minlength="6" autocomplete="current-password" placeholder="Your password">
+   <div class="v7EntryActions"><button class="v7Primary" type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div>
+   <p class="v7FinePrint">New accounts may need email confirmation before signing in. Don't share your password.</p>
+  </form>
+  <p id="v7Message" role="status" aria-live="polite"></p>
+ </div>
+</section>
  <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
 <dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.5</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.6</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
