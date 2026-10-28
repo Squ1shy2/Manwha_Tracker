@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=yes">
 <meta name="theme-color" content="#111318">
-<title>Manhwa Tracker v7.5</title>
+<title>Manhwa Tracker v7.4</title>
 <style>
 :root{
   color-scheme:dark;
@@ -130,7 +130,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
 </head>
 <body class="v7locked">
 <section id="v7Gate" aria-label="Account access">
- <h2>Manhwa Tracker v7.5 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
+ <h2>Manhwa Tracker v7.4 <small style="font-size:12px;color:#80d8ac">DEVELOPMENT</small></h2>
  <p>Full tracker interface with optional cloud account. Your original v6.4 site remains separate.</p>
  <div id="v7Welcome"><button id="v7Account" type="button">Use an account</button> <button id="v7Guest" type="button">Continue as guest</button></div>
  <form id="v7Auth" hidden><label>Email <input id="v7Email" type="email" required autocomplete="email"></label><label>Password <input id="v7Password" type="password" required minlength="6" autocomplete="current-password"></label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="submit">Sign in</button><button type="button" id="v7Register">Create account</button><button type="button" id="v7Back">Back</button></div></form>
@@ -139,7 +139,7 @@ body.v7locked header,body.v7locked main,body.v7locked .dashboard,body.v7locked #
  <div id="v7Session" hidden><span id="v7SessionLabel"></span> <span id="v7Sync">Guest • local only</span> <button id="v7Resolve" hidden type="button">Resolve conflicts</button> <button id="v7Exit" type="button">Exit / Sign out</button></div>
 <dialog id="v7ConflictDialog"><div class="dlg"><h2>Resolve sync conflicts</h2><p class="helper">Select Local Device or Cloud Version for each title. Your previous local data will be saved as a recovery backup.</p><div id="v7ConflictList"></div><p class="note" id="v7ConflictError"></p><div class="actions"><button id="v7CancelResolve">Cancel</button><button id="v7ApplyResolve">Apply decisions</button></div></div></dialog>
 <header><div class="wrap">
-  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.5</span></h1>
+  <h1>Manhwa Tracker <span style="font-size:12px;color:#929baa;font-weight:500">v7.4</span></h1>
   <div class="topbar">
     <input id="search" type="search" placeholder="Search titles, status, notes…">
     <button id="addTitleBtn">+ Add title</button><button id="checkAllBtn">Check statuses</button>
@@ -298,38 +298,32 @@ function reliableMatch(asked,candidates){
  return candidates.some(t=>normalizedTitle(t)===needle);
 }
 async function checkAniList(title){
- // Search multiple candidates: AniList often has distinct adaptations under the same English alias.
- const q=`query ($search:String){Page(page:1,perPage:15){media(search:$search,type:MANGA){id status format chapters synonyms countryOfOrigin title{romaji english native} siteUrl}}}`;
+ const q=`query ($search:String){Media(search:$search,type:MANGA){id status title{romaji english native} siteUrl}}`;
  const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({query:q,variables:{search:title}})});
  if(!r.ok)throw Error("HTTP "+r.status);
  const j=await r.json();
  if(j.errors?.length)throw Error(j.errors[0].message||"API error");
- const media=j?.data?.Page?.media||[];
- const candidates=media.map(m=>({provider:"AniList",name:m.title?.english||m.title?.romaji||m.title?.native||"",names:[m.title?.english,m.title?.romaji,m.title?.native,...(m.synonyms||[])],status:mapAniStatus(m.status),rawStatus:m.status,format:m.format,chapters:m.chapters,url:m.siteUrl||("https://anilist.co/manga/"+m.id),id:m.id}));
- const matched=candidates.filter(m=>reliableMatch(title,m.names));
- // Never imply a unique, verified series when several adaptations share a synonym.
- if(matched.length>1)return {provider:"AniList",ambiguous:true,candidates:matched.slice(0,5),name:title,names:[],url:"https://anilist.co/search/manga?search="+encodeURIComponent(title)};
- if(matched.length===1)return {...matched[0],match:true};
- if(candidates.length)return {...candidates[0],match:false};
- return null;
+ const m=j?.data?.Media;
+ if(!m)return null;
+ return {provider:"AniList",name:m.title?.english||m.title?.romaji||m.title?.native||"",names:[m.title?.english,m.title?.romaji,m.title?.native],status:mapAniStatus(m.status),rawStatus:m.status,url:m.siteUrl||("https://anilist.co/manga/"+m.id),id:m.id};
 }
 async function checkMangaUpdates(title){
- // MangaUpdates does not consistently permit direct browser requests.
- // Proxy only this public metadata lookup through our authenticated Edge Function.
- if(window.v7Mode!=="cloud"){
-  return {provider:"MangaUpdates",name:title,names:[],status:null,
-   note:"Sign in to verify via MangaUpdates; guest mode can use the source link.",
-   url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
- }
- const {data:result,error}=await client.functions.invoke("mangaupdates-lookup",{body:{title}});
- if(error)throw Error(error.message||"Lookup temporarily unavailable");
- if(result?.error)throw Error(result.error);
- if(!result?.matched){
-  return {provider:"MangaUpdates",name:title,names:[],status:null,
-   note:result?.note||"No exact title match",url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
- }
- return {provider:"MangaUpdates",name:result.title||title,names:[result.title,title],
-  status:result.status||"Unknown",rawStatus:result.rawStatus||"",url:result.url||"https://www.mangaupdates.com",id:result.id};
+ const r=await fetch("https://api.mangaupdates.com/v1/series/search",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({search:title,stype:"title",perpage:5})});
+ if(!r.ok)throw Error("HTTP "+r.status);
+ const j=await r.json();
+ const entries=Array.isArray(j?.results)?j.results:Array.isArray(j?.series)?j.series:[];
+ const first=entries.find(entry=>reliableMatch(title,[entry?.record?.title,entry?.title,...(entry?.record?.associated||[]).map(x=>x.title)]));
+ if(!first)return null;
+ const rec=first.record||first;
+ const id=rec.series_id;
+ // Fetch the series detail only after an exact title match, to avoid wrong-series status.
+ if(!id)return {provider:"MangaUpdates",name:rec.title||title,names:[rec.title],status:null,url:"https://www.mangaupdates.com/series.html?search="+encodeURIComponent(title)};
+ const detail=await fetch("https://api.mangaupdates.com/v1/series/"+encodeURIComponent(id));
+ if(!detail.ok)throw Error("detail HTTP "+detail.status);
+ const d=await detail.json();
+ const status=String(d.status||"").trim();
+ const label=d.completed===true?"Completed":(/hiatus|on hold/i.test(status)?"Hiatus / Season Break":(/cancel|axed|discontinu/i.test(status)?"Cancelled":(/ongoing/i.test(status)?"Ongoing":status||"Unknown")));
+ return {provider:"MangaUpdates",name:d.title||rec.title||title,names:[d.title,rec.title],status:label,rawStatus:status,url:d.url||"https://www.mangaupdates.com/series/"+id,id};
 }
 async function checkOne(i){
  const x=data[i],el=document.getElementById("api-"+i);
@@ -349,16 +343,8 @@ async function checkOne(i){
  const nodes=[];
  for(const result of results){
   const line=document.createElement("div");
-  if(result.ambiguous){
-   line.textContent="AniList: Multiple possible editions — choose the correct adaptation: ";
-   for(const c of result.candidates){
-    const link=document.createElement("a");link.href=c.url;link.target="_blank";link.rel="noopener noreferrer";
-    link.textContent=(c.name||"Edition")+" ("+(c.status||"Unknown")+(c.chapters?", "+c.chapters+" chapters":"")+")";
-    line.append(link,document.createTextNode(" · "));
-   }
-  }
-  else if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";\n  else if(result.note)line.textContent=result.provider+": "+result.note+" ";
-  else line.textContent=result.provider+": "+(result.match?"Matching title (confirm edition)":"Possible match — verify title")+" • "+(result.status||"Status unavailable")+" • ";
+  if(result.error)line.textContent=result.provider+": unavailable ("+result.error+"). ";
+  else line.textContent=result.provider+": "+(result.match?"Exact title match":"Possible match — verify title")+" • "+(result.status||"Status unavailable")+" • ";
   if(result.url){
    const link=document.createElement("a");link.href=result.url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Source";line.append(link);
   }
@@ -683,9 +669,8 @@ if ("serviceWorker" in navigator) {
 
 <button id="topBtn" class="topBtn" aria-label="Back to top">↑</button>
 
-<script>
-(async()=>{
-const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm");
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";
 const client=createClient("https://lqsbnwujhqhtcbkbmbzx.supabase.co","sb_publishable_Q9gt-VVebZ5MfZz_fMprHQ_a2paH51e");
 const $=id=>document.getElementById(id);
 const guestKey="manhwaTracker_v7_1_guest";
@@ -704,7 +689,7 @@ function storePending(){
  localStorage.setItem(pendingKey(),JSON.stringify(pending));
  pendingGeneration++;
 }
-function toLocal(r){const src=r.source_data||{};return {...src,title:r.title,chapter:Number(r.chapter),status:r.publication_status_override||src.status||"Needs verification",favorite:!!r.favorite,note:r.personal_notes||"",url:r.reading_url||"",letter:((r.title||"").trim().match(/[A-Za-z0-9]/)?.[0]?.toUpperCase()||"#"),lastUpdated:src.lastUpdated||null,_cloudId:r.id}}
+function toLocal(r){const src=r.source_data||{};return {...src,title:r.title,chapter:Number(r.chapter),status:r.publication_status_override||src.status||"Needs verification",favorite:!!r.favorite,note:r.personal_notes||"",url:r.reading_url||"",letter:deriveLetter(r.title),lastUpdated:src.lastUpdated||null,_cloudId:r.id}}
 function toRemote(x){return {title:x.title,title_key:key(x.title),chapter:Number(x.chapter)||0,favorite:!!x.favorite,reading_url:x.url||null,personal_notes:x.note||null,publication_status_override:x.status||null,source_data:{...x,_cloudId:undefined}}}
 const equivalent=(x,r)=>{
  const a=toRemote(x),b=toRemote(toLocal(r));
@@ -890,7 +875,6 @@ $("v7Exit").onclick=async()=>{
  $("v7Welcome").hidden=false;$("v7Auth").hidden=true;message("");render();
 };
 try{const {data:result}=await client.auth.getSession();if(result.session)await enterAccount(result.session)}catch(e){message("Unable to load your session: "+e.message)}
-})().catch(err=>{const el=document.getElementById("v7Message");if(el)el.textContent="Unable to start v7: "+err.message;console.error(err)});
 </script>
 </body>
 </html>
